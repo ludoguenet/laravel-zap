@@ -106,33 +106,33 @@ $nextSlot = $doctor->getNextBookableSlot('2025-01-15', 60, 15);
 
 ```php
 // Daily
-->daily()->from('2025-01-01')->to('2025-12-31')
+$schedule->daily()->from('2025-01-01')->to('2025-12-31');
 
 // Weekly (specific days)
-->weekly(['monday', 'wednesday', 'friday'])->forYear(2025)
+$schedule->weekly(['monday', 'wednesday', 'friday'])->forYear(2025);
 
 // Monthly
-->monthly(['day_of_month' => 1])->forYear(2025)
+$schedule->monthly(['day_of_month' => 1])->forYear(2025);
 ```
 
 ### Date Ranges
 
 ```php
-->from('2025-01-15')                          // Single date
-->from('2025-01-01')->to('2025-12-31')        // Date range
-->between('2025-01-01', '2025-12-31')         // Alternative syntax
-->forYear(2025)                               // Entire year shortcut
+$schedule->from('2025-01-15');                          // Single date
+$schedule->from('2025-01-01')->to('2025-12-31');        // Date range
+$schedule->between('2025-01-01', '2025-12-31');         // Alternative syntax
+$schedule->forYear(2025);                               // Entire year shortcut
 ```
 
 ### Time Periods
 
 ```php
 // Single period
-->addPeriod('09:00', '17:00')
+$schedule->addPeriod('09:00', '17:00');
 
 // Multiple periods (split shifts)
-->addPeriod('09:00', '12:00')
-->addPeriod('14:00', '17:00')
+$schedule->addPeriod('09:00', '12:00');
+$schedule->addPeriod('14:00', '17:00');
 ```
 
 ---
@@ -140,8 +140,11 @@ $nextSlot = $doctor->getNextBookableSlot('2025-01-15', 60, 15);
 ## 🔍 Query & Check
 
 ```php
-// Check availability
-$doctor->isAvailableAt('2025-01-15', '10:00', '11:00');
+// Check if there is at least one bookable slot on the day
+$isBookable = $doctor->isBookableAt('2025-01-15', 60);
+
+// Get bookable slots
+$slots = $doctor->getBookableSlots('2025-01-15', 60, 15);
 
 // Find conflicts
 $conflicts = Zap::findConflicts($schedule);
@@ -161,6 +164,8 @@ $schedule->isAvailability();
 $schedule->isAppointment();
 $schedule->isBlocked();
 ```
+
+> `isAvailableAt()` is deprecated in favor of `isBookableAt()` and `getBookableSlots()`. Use the bookable APIs for all new code.
 
 ---
 

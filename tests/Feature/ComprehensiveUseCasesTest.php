@@ -1167,14 +1167,8 @@ describe('Comprehensive Use Cases - All Features', function () {
             // Room 1 should not be available due to the appointment
             // Note: isAvailableAt checks if something is blocking, not if it's within availability
             // Both rooms have availability schedules, but room1 has an appointment blocking
-            // Verify room2 has availability for that date (Wednesday)
-            $slots = $room2->getBookableSlots('2025-01-15', 60, 0);
-
-            $isBookable = collect($slots)->contains(function ($slot) {
-                return $slot['start_time'] === '09:00' && $slot['is_available'];
-            });
-
-            expect($isBookable)->toBeTrue();
+            // Verify room2 has bookable slots for that date (Wednesday)
+            expect($room2->isBookableAt('2025-01-15', 60, 0))->toBeTrue();
             // Room 1 has an appointment at this time, so it should be blocked
             expect($room1->isAvailableAt('2025-01-15', '09:00', '11:00'))->toBeFalse();
 

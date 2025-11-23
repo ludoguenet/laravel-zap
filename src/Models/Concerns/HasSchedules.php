@@ -135,9 +135,15 @@ trait HasSchedules
 
     /**
      * Check if this model is available during a specific time period.
+     *
+     * @deprecated This method is deprecated. Use isBookableAt() or getBookableSlots() instead.
      */
     public function isAvailableAt(string $date, string $startTime, string $endTime, ?Collection $schedules = null): bool
     {
+        trigger_error(
+            'isAvailableAt() is deprecated. Use isBookableAt() or getBookableSlots() instead.',
+            E_USER_DEPRECATED
+        );
         // Get all active schedules for this model on this date
         $schedules = $schedules ?? \Zap\Models\Schedule::where('schedulable_type', get_class($this))
             ->where('schedulable_id', $this->getKey())
@@ -424,6 +430,25 @@ trait HasSchedules
             ->sortBy('start_time')
             ->values()
             ->toArray();
+    }
+
+    /**
+     * Check if this model has at least one bookable slot on a given date.
+     */
+    public function isBookableAt(
+        string $date,
+        int $slotDuration = 60,
+        ?int $bufferMinutes = null
+    ): bool {
+        $slots = $this->getBookableSlots($date, $slotDuration, $bufferMinutes);
+
+        foreach ($slots as $slot) {
+            if (! empty($slot['is_available'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
