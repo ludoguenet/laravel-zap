@@ -602,6 +602,12 @@ class ValidationService
         $conflictService = app(\Zap\Services\ConflictDetectionService::class);
 
         foreach ($otherSchedules as $otherSchedule) {
+            // Availability schedules never conflict with anything (they allow overlaps)
+            if ($schedule->schedule_type->is(\Zap\Enums\ScheduleTypes::AVAILABILITY) ||
+                $otherSchedule->schedule_type->is(\Zap\Enums\ScheduleTypes::AVAILABILITY)) {
+                continue;
+            }
+
             if ($conflictService->schedulesOverlap($schedule, $otherSchedule, $bufferMinutes)) {
                 $conflicts[] = $otherSchedule;
             }

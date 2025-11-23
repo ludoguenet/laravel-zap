@@ -112,7 +112,7 @@ $lunchBreak = Zap::for($doctor)
 $appointment1 = Zap::for($doctor)
     ->named('Patient A - Consultation')
     ->appointment()
-    ->from('2025-01-01')
+    ->from('2025-01-15')
     ->addPeriod('10:00', '11:00')
     ->withMetadata(['patient_id' => 1, 'type' => 'consultation'])
     ->save();
@@ -120,10 +120,15 @@ $appointment1 = Zap::for($doctor)
 $appointment2 = Zap::for($doctor)
     ->named('Patient B - Follow-up')
     ->appointment()
-    ->from('2025-01-01')
+    ->from('2025-01-15')
     ->addPeriod('15:00', '16:00')
     ->withMetadata(['patient_id' => 2, 'type' => 'follow-up'])
     ->save();
+
+// Get bookable slots for a specific date
+// This will only return slots within availability windows (9-12, 14-17)
+// and exclude blocked times (12-13) and existing appointments (10-11, 15-16)
+$bookableSlots = $doctor->getBookableSlots('2025-01-15', 60, 15);
 ```
 
 ### Resource Booking System
@@ -143,7 +148,7 @@ $roomAvailability = Zap::for($conferenceRoom)
 $meeting1 = Zap::for($conferenceRoom)
     ->named('Team Standup')
     ->appointment()
-    ->from('2025-01-01')
+    ->from('2025-01-15')
     ->addPeriod('09:00', '10:00')
     ->withMetadata(['organizer' => 'john@company.com', 'attendees' => 8])
     ->save();
@@ -151,10 +156,14 @@ $meeting1 = Zap::for($conferenceRoom)
 $meeting2 = Zap::for($conferenceRoom)
     ->named('Client Presentation')
     ->appointment()
-    ->from('2025-01-01')
+    ->from('2025-01-15')
     ->addPeriod('14:00', '16:00')
     ->withMetadata(['organizer' => 'jane@company.com', 'attendees' => 15])
     ->save();
+
+// Get available time slots for booking
+$availableSlots = $conferenceRoom->getBookableSlots('2025-01-15', 60, 10);
+// Returns slots within 8:00-18:00, excluding booked times (9-10, 14-16)
 ```
 
 ## Querying by Schedule Type
@@ -203,13 +212,71 @@ $isAvailable = $doctor->isAvailableAt('2025-01-01', '10:00', '11:00');
 // This will return true if the time is within availability windows
 ```
 
-## Buffer Time Support
+## Getting Bookable Slots
 
-Buffer time can be added to availability slots to create gaps between appointments:
+The `getBookableSlots()` method is the primary way to retrieve reservable time slots. It respects all schedule types:
+
+- **Availability schedules**: Define the base windows where slots can be generated
+- **Appointment schedules**: Block time slots that are already booked
+- **Blocked schedules**: Prevent slots from being generated during unavailable periods
+- **Buffer time**: Adds gaps between slots to accommodate setup/cleanup
+
+### Complete Workflow Example
 
 ```php
-// Get availability slots with 15-minute buffer between appointments
-$slots = $doctor->getAvailableSlots('2025-01-01', '09:00', '17:00', 60, 15);
+// Step 1: Create availability schedule (working hours)
+$availability = Zap::for($doctor)
+    ->named('Office Hours')
+    ->availability()
+    ->from('2025-01-01')
+    ->to('2025-12-31')
+    ->addPeriod('09:00', '12:00')
+    ->addPeriod('14:00', '17:00')
+    ->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+    ->save();
+
+// Step 2: Create blocked schedule (lunch break)
+$lunchBreak = Zap::for($doctor)
+    ->named('Lunch Break')
+    ->blocked()
+    ->from('2025-01-01')
+    ->to('2025-12-31')
+    ->addPeriod('12:00', '13:00')
+    ->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+    ->save();
+
+// Step 3: Create existing appointments
+$appointment1 = Zap::for($doctor)
+    ->named('Patient A - Consultation')
+    ->appointment()
+    ->from('2025-01-15')
+    ->addPeriod('10:00', '11:00')
+    ->withMetadata(['patient_id' => 1])
+    ->save();
+
+$appointment2 = Zap::for($doctor)
+    ->named('Patient B - Follow-up')
+    ->appointment()
+    ->from('2025-01-15')
+    ->addPeriod('15:00', '16:00')
+    ->withMetadata(['patient_id' => 2])
+    ->save();
+
+// Step 4: Get bookable slots (respects availability, blocks, and appointments)
+$slots = $doctor->getBookableSlots('2025-01-15', 60, 15);
+
+// Result: Only slots within availability windows (9-12, 14-17)
+// Excludes: Lunch break (12-13), existing appointments (10-11, 15-16)
+// Includes: 15-minute buffer between slots
+```
+
+### Buffer Time Support
+
+Buffer time can be added to bookable slots to create gaps between appointments:
+
+```php
+// Get bookable slots with 15-minute buffer between appointments
+$slots = $doctor->getBookableSlots('2025-01-01', 60, 15);
 
 // Configure global buffer time in config/zap.php
 'time_slots' => [

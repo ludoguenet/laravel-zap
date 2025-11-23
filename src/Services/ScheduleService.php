@@ -50,9 +50,6 @@ class ScheduleService
                 }
             }
 
-            // Note: Conflict checking is now done during validation phase
-            // No need to check again after creation
-
             // Fire the created event
             Event::dispatch(new ScheduleCreated($schedule));
 
@@ -140,6 +137,8 @@ class ScheduleService
 
     /**
      * Get available time slots for a schedulable on a given date.
+     *
+     * @deprecated This method is deprecated. Use getBookableSlots() on the schedulable model instead.
      */
     public function getAvailableSlots(
         Model $schedulable,
@@ -149,6 +148,10 @@ class ScheduleService
         int $slotDuration = 60,
         ?int $bufferMinutes = null
     ): array {
+        trigger_error(
+            'ScheduleService::getAvailableSlots() is deprecated. Use getBookableSlots() on the schedulable model instead.',
+            E_USER_DEPRECATED
+        );
         if (method_exists($schedulable, 'getAvailableSlots')) {
             return $schedulable->getAvailableSlots($date, $startTime, $endTime, $slotDuration, $bufferMinutes);
         }
@@ -158,6 +161,8 @@ class ScheduleService
 
     /**
      * Check if a schedulable is available at a specific time.
+     *
+     * @deprecated This method is deprecated. Use isAvailableAt() on the schedulable model instead.
      */
     public function isAvailable(
         Model $schedulable,
@@ -165,6 +170,10 @@ class ScheduleService
         string $startTime,
         string $endTime
     ): bool {
+        trigger_error(
+            'ScheduleService::isAvailable() is deprecated. Use isAvailableAt() on the schedulable model instead.',
+            E_USER_DEPRECATED
+        );
         if (method_exists($schedulable, 'isAvailableAt')) {
             return $schedulable->isAvailableAt($date, $startTime, $endTime);
         }

@@ -18,6 +18,19 @@ describe('Slots Feature Edge Cases', function () {
         it('handles schedules that cross midnight', function () {
             $user = createUser();
 
+            // Create availability schedules
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('21:00', '23:59')
+                ->save();
+
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-16')
+                ->addPeriod('00:00', '03:00')
+                ->save();
+
             // Schedule from 22:00 to 23:59 on Saturday
             Zap::for($user)
                 ->from('2025-03-15')
@@ -30,16 +43,19 @@ describe('Slots Feature Edge Cases', function () {
                 ->addPeriod('00:00', '02:00')
                 ->save();
 
-            // Check evening slots on Saturday - only test existing slots
-            $eveningSlots = $user->getAvailableSlots('2025-03-15', '21:00', '23:00', 60);
-            expect(count($eveningSlots))->toBeGreaterThan(0);
-            expect($eveningSlots[1]['is_available'])->toBeFalse(); // 22:00-23:00 blocked
+            // Check evening slots on Saturday
+            $eveningSlots = $user->getBookableSlots('2025-03-15', 60);
+            $slot22 = collect($eveningSlots)->firstWhere('start_time', '22:00');
+            expect($slot22['is_available'])->toBeFalse(); // 22:00-23:00 blocked
 
             // Check early morning slots on Sunday
-            $morningSlots = $user->getAvailableSlots('2025-03-16', '00:00', '03:00', 60);
-            expect($morningSlots[0]['is_available'])->toBeFalse(); // 00:00-01:00 blocked
-            expect($morningSlots[1]['is_available'])->toBeFalse(); // 01:00-02:00 blocked
-            expect($morningSlots[2]['is_available'])->toBeTrue();  // 02:00-03:00 available
+            $morningSlots = $user->getBookableSlots('2025-03-16', 60);
+            $slot00 = collect($morningSlots)->firstWhere('start_time', '00:00');
+            $slot01 = collect($morningSlots)->firstWhere('start_time', '01:00');
+            $slot02 = collect($morningSlots)->firstWhere('start_time', '02:00');
+            expect($slot00['is_available'])->toBeFalse(); // 00:00-01:00 blocked
+            expect($slot01['is_available'])->toBeFalse(); // 01:00-02:00 blocked
+            expect($slot02['is_available'])->toBeTrue();  // 02:00-03:00 available
         });
 
     });
@@ -48,6 +64,13 @@ describe('Slots Feature Edge Cases', function () {
 
         it('handles many small slots efficiently', function () {
             $user = createUser();
+
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('00:00', '23:59')
+                ->save();
 
             // Block random hours throughout the day
             for ($i = 10; $i < 17; $i += 2) {
@@ -60,7 +83,7 @@ describe('Slots Feature Edge Cases', function () {
             $startTime = microtime(true);
 
             // Get 15-minute slots for entire day (should create 96 slots)
-            $slots = $user->getAvailableSlots('2025-03-15', '00:00', '23:59', 15);
+            $slots = $user->getBookableSlots('2025-03-15', 15);
 
             $executionTime = microtime(true) - $startTime;
 
@@ -75,6 +98,13 @@ describe('Slots Feature Edge Cases', function () {
         it('handles long duration searches efficiently', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '19:00')
+                ->save();
+
             // Block only small portions, leaving enough space for longer slots
             Zap::for($user)
                 ->from('2025-03-15')
@@ -84,7 +114,7 @@ describe('Slots Feature Edge Cases', function () {
             $startTime = microtime(true);
 
             // Look for 2-hour slot (reasonable duration that should be found)
-            $nextSlot = $user->getNextAvailableSlot('2025-03-15', 120, '09:00', '19:00');
+            $nextSlot = $user->getNextBookableSlot('2025-03-15', 120);
 
             $executionTime = microtime(true) - $startTime;
 
@@ -96,21 +126,23 @@ describe('Slots Feature Edge Cases', function () {
 
     describe('Invalid input handling', function () {
 
-        it('handles invalid time ranges gracefully', function () {
+        it('handles invalid slot durations gracefully', function () {
             $user = createUser();
 
-            // End time before start time
-            $slots = $user->getAvailableSlots('2025-03-15', '17:00', '09:00', 60);
-            expect($slots)->toBeArray();
-            expect(count($slots))->toBe(0); // Should return empty array
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '17:00')
+                ->save();
 
             // Invalid slot duration
-            $slots2 = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', 0);
+            $slots2 = $user->getBookableSlots('2025-03-15', 0);
             expect($slots2)->toBeArray();
             expect(count($slots2))->toBe(0); // Should return empty array
 
             // Negative slot duration
-            $slots3 = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', -60);
+            $slots3 = $user->getBookableSlots('2025-03-15', -60);
             expect($slots3)->toBeArray();
             expect(count($slots3))->toBe(0); // Should return empty array
         });
@@ -118,13 +150,20 @@ describe('Slots Feature Edge Cases', function () {
         it('handles invalid dates gracefully', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2020-01-01')
+                ->addPeriod('09:00', '17:00')
+                ->save();
+
             // Past dates
-            $slots = $user->getAvailableSlots('2020-01-01', '09:00', '17:00', 60);
+            $slots = $user->getBookableSlots('2020-01-01', 60);
             expect($slots)->toBeArray(); // Should not crash
 
             // Invalid date format (should not crash, but may return empty)
             try {
-                $slots2 = $user->getAvailableSlots('invalid-date', '09:00', '17:00', 60);
+                $slots2 = $user->getBookableSlots('invalid-date', 60);
                 expect($slots2)->toBeArray();
             } catch (Exception $e) {
                 // Expected behavior - invalid date should throw exception
@@ -139,6 +178,13 @@ describe('Slots Feature Edge Cases', function () {
         it('handles consistent timezone behavior', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('13:00', '16:00')
+                ->save();
+
             // Schedule at specific time
             Zap::for($user)
                 ->from('2025-03-15')
@@ -146,11 +192,14 @@ describe('Slots Feature Edge Cases', function () {
                 ->save();
 
             // Get slots in same timezone
-            $slots = $user->getAvailableSlots('2025-03-15', '13:00', '16:00', 60);
+            $slots = $user->getBookableSlots('2025-03-15', 60);
 
-            expect($slots[0]['is_available'])->toBeTrue();  // 13:00-14:00 available
-            expect($slots[1]['is_available'])->toBeFalse(); // 14:00-15:00 blocked
-            expect($slots[2]['is_available'])->toBeTrue();  // 15:00-16:00 available
+            $slot13 = collect($slots)->firstWhere('start_time', '13:00');
+            $slot14 = collect($slots)->firstWhere('start_time', '14:00');
+            $slot15 = collect($slots)->firstWhere('start_time', '15:00');
+            expect($slot13['is_available'])->toBeTrue();  // 13:00-14:00 available
+            expect($slot14['is_available'])->toBeFalse(); // 14:00-15:00 blocked
+            expect($slot15['is_available'])->toBeTrue();  // 15:00-16:00 available
         });
 
     });
@@ -159,6 +208,14 @@ describe('Slots Feature Edge Cases', function () {
 
         it('handles multiple overlapping weekly patterns', function () {
             $user = createUser();
+
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-17')
+                ->addPeriod('08:00', '18:00')
+                ->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+                ->save();
 
             // Monday/Wednesday/Friday morning
             Zap::for($user)
@@ -175,18 +232,30 @@ describe('Slots Feature Edge Cases', function () {
                 ->save();
 
             // Test Monday (should block morning)
-            $mondaySlots = $user->getAvailableSlots('2025-03-17', '08:00', '18:00', 60);
-            expect($mondaySlots[1]['is_available'])->toBeFalse(); // 09:00-10:00 blocked
-            expect($mondaySlots[5]['is_available'])->toBeTrue();  // 13:00-14:00 available
+            $mondaySlots = $user->getBookableSlots('2025-03-17', 60);
+            $monday09 = collect($mondaySlots)->firstWhere('start_time', '09:00');
+            $monday13 = collect($mondaySlots)->firstWhere('start_time', '13:00');
+            expect($monday09['is_available'])->toBeFalse(); // 09:00-10:00 blocked
+            expect($monday13['is_available'])->toBeTrue();  // 13:00-14:00 available
 
             // Test Tuesday (should block afternoon)
-            $tuesdaySlots = $user->getAvailableSlots('2025-03-18', '08:00', '18:00', 60);
-            expect($tuesdaySlots[1]['is_available'])->toBeTrue();  // 09:00-10:00 available
-            expect($tuesdaySlots[5]['is_available'])->toBeFalse(); // 13:00-14:00 blocked
+            $tuesdaySlots = $user->getBookableSlots('2025-03-18', 60);
+            $tuesday09 = collect($tuesdaySlots)->firstWhere('start_time', '09:00');
+            $tuesday13 = collect($tuesdaySlots)->firstWhere('start_time', '13:00');
+            expect($tuesday09['is_available'])->toBeTrue();  // 09:00-10:00 available
+            expect($tuesday13['is_available'])->toBeFalse(); // 13:00-14:00 blocked
         });
 
         it('handles bi-weekly patterns', function () {
             $user = createUser();
+
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '17:00')
+                ->weekly(['saturday'])
+                ->save();
 
             // Every other Saturday
             Zap::for($user)
@@ -196,17 +265,17 @@ describe('Slots Feature Edge Cases', function () {
                 ->save();
 
             // March 15 (first Saturday) - should be blocked
-            $firstSaturday = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', 60);
+            $firstSaturday = $user->getBookableSlots('2025-03-15', 60);
             $blockedSlots = array_filter($firstSaturday, fn ($slot) => ! $slot['is_available']);
             expect(count($blockedSlots))->toBeGreaterThan(0);
 
             // March 22 (second Saturday) - should be available (bi-weekly means every 2 weeks)
-            $secondSaturday = $user->getAvailableSlots('2025-03-22', '09:00', '17:00', 60);
+            $secondSaturday = $user->getBookableSlots('2025-03-22', 60);
             $availableSlots = array_filter($secondSaturday, fn ($slot) => $slot['is_available']);
             expect(count($availableSlots))->toBeGreaterThan(0); // Should have some available slots
 
             // March 29 (third Saturday, which is week 2 of cycle) - should be blocked
-            $thirdSaturday = $user->getAvailableSlots('2025-03-29', '09:00', '17:00', 60);
+            $thirdSaturday = $user->getBookableSlots('2025-03-29', 60);
             $blockedSlots3 = array_filter($thirdSaturday, fn ($slot) => ! $slot['is_available']);
             expect(count($blockedSlots3))->toBeGreaterThan(0);
         });
@@ -218,6 +287,13 @@ describe('Slots Feature Edge Cases', function () {
         it('handles very short slots correctly', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('10:00', '10:20')
+                ->save();
+
             // Block 10:05-10:15 (10-minute block)
             Zap::for($user)
                 ->from('2025-03-15')
@@ -225,7 +301,7 @@ describe('Slots Feature Edge Cases', function () {
                 ->save();
 
             // 5-minute slots should detect the conflict
-            $slots5min = $user->getAvailableSlots('2025-03-15', '10:00', '10:20', 5);
+            $slots5min = $user->getBookableSlots('2025-03-15', 5);
 
             // Should have slots: 10:00-05, 10:05-10, 10:10-15, 10:15-20
             expect(count($slots5min))->toBe(4);
@@ -238,6 +314,13 @@ describe('Slots Feature Edge Cases', function () {
         it('handles exact time boundary matches', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '12:00')
+                ->save();
+
             // Schedule exactly 10:00-11:00
             Zap::for($user)
                 ->from('2025-03-15')
@@ -245,22 +328,29 @@ describe('Slots Feature Edge Cases', function () {
                 ->save();
 
             // Request slot exactly 10:00-11:00
-            $slots = $user->getAvailableSlots('2025-03-15', '10:00', '11:00', 60);
-            expect($slots)->toHaveCount(1);
-            expect($slots[0]['start_time'])->toBe('10:00');
-            expect($slots[0]['end_time'])->toBe('11:00');
-            expect($slots[0]['is_available'])->toBeFalse(); // Should be blocked
+            $slots = $user->getBookableSlots('2025-03-15', 60);
+            $slot10 = collect($slots)->firstWhere('start_time', '10:00');
+            expect($slot10['start_time'])->toBe('10:00');
+            expect($slot10['end_time'])->toBe('11:00');
+            expect($slot10['is_available'])->toBeFalse(); // Should be blocked
 
             // Request slots 09:00-10:00 and 11:00-12:00 (adjacent)
-            $beforeSlots = $user->getAvailableSlots('2025-03-15', '09:00', '10:00', 60);
-            expect($beforeSlots[0]['is_available'])->toBeTrue(); // Should be available
+            $slot09 = collect($slots)->firstWhere('start_time', '09:00');
+            expect($slot09['is_available'])->toBeTrue(); // Should be available
 
-            $afterSlots = $user->getAvailableSlots('2025-03-15', '11:00', '12:00', 60);
-            expect($afterSlots[0]['is_available'])->toBeTrue(); // Should be available
+            $slot11 = collect($slots)->firstWhere('start_time', '11:00');
+            expect($slot11['is_available'])->toBeTrue(); // Should be available
         });
 
         it('finds gaps between adjacent schedules', function () {
             $user = createUser();
+
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('08:00', '12:00')
+                ->save();
 
             // Two adjacent schedules with gap
             Zap::for($user)
@@ -269,13 +359,20 @@ describe('Slots Feature Edge Cases', function () {
                 ->addPeriod('10:30', '11:30') // Late morning
                 ->save();
 
-            // Look for 30-minute slot - should find the gap
-            $nextSlot = $user->getNextAvailableSlot('2025-03-15', 30, '09:00', '12:00');
-            expect($nextSlot['start_time'])->toBe('10:00');
-            expect($nextSlot['end_time'])->toBe('10:30');
+            // Look for 30-minute slot - should find first available slot (earliest)
+            $nextSlot = $user->getNextBookableSlot('2025-03-15', 30);
+            expect($nextSlot['start_time'])->toBe('08:00'); // First available slot
+            expect($nextSlot['end_time'])->toBe('08:30');
 
-            // Look for 45-minute slot - gap is too small, should find either at very beginning or after 11:30
-            $nextSlot45 = $user->getNextAvailableSlot('2025-03-15', 45, '08:00', '12:00');
+            // Verify that the gap slot (10:00-10:30) is also available in the slots list
+            $allSlots = $user->getBookableSlots('2025-03-15', 30);
+            $gapSlot = collect($allSlots)->firstWhere('start_time', '10:00');
+            expect($gapSlot)->not->toBeNull();
+            expect($gapSlot['is_available'])->toBeTrue();
+            expect($gapSlot['end_time'])->toBe('10:30');
+
+            // Look for 45-minute slot - gap is too small, should find at very beginning
+            $nextSlot45 = $user->getNextBookableSlot('2025-03-15', 45);
             expect($nextSlot45['start_time'])->toBe('08:00'); // Should find at the very beginning before any blocks
             expect($nextSlot45['end_time'])->toBe('08:45');
         });
@@ -286,6 +383,14 @@ describe('Slots Feature Edge Cases', function () {
 
         it('performs well with many recurring schedules', function () {
             $user = createUser();
+
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-17')
+                ->addPeriod('08:00', '20:00')
+                ->weekly(['monday', 'wednesday', 'friday'])
+                ->save();
 
             // Create 10 different recurring schedules
             for ($i = 0; $i < 10; $i++) {
@@ -302,8 +407,8 @@ describe('Slots Feature Edge Cases', function () {
 
             $startTime = microtime(true);
 
-            $slots = $user->getAvailableSlots('2025-03-17', '08:00', '20:00', 60); // Monday
-            $nextSlot = $user->getNextAvailableSlot('2025-03-17', 120, '08:00', '20:00');
+            $slots = $user->getBookableSlots('2025-03-17', 60); // Monday
+            $nextSlot = $user->getNextBookableSlot('2025-03-17', 120);
 
             $executionTime = microtime(true) - $startTime;
 

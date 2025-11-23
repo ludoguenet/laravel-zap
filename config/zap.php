@@ -23,7 +23,6 @@ return [
             'enabled' => false,
             'start' => '09:00',
             'end' => '17:00',
-            'timezone' => null, // Uses app timezone if null
         ],
         'max_duration' => [
             'enabled' => false,
@@ -47,23 +46,6 @@ return [
     'conflict_detection' => [
         'enabled' => true,
         'buffer_minutes' => 0, // Buffer time between schedules
-        'auto_resolve' => false, // Automatically resolve conflicts
-        'strict_mode' => true, // Throw exceptions on conflicts
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Recurring Schedules
-    |--------------------------------------------------------------------------
-    |
-    | Settings for processing recurring schedules and cleanup.
-    |
-    */
-    'recurring' => [
-        'process_days_ahead' => 30, // Generate instances this many days ahead
-        'cleanup_expired_after_days' => 90, // Clean up expired schedules after X days
-        'max_instances' => 1000, // Maximum instances to generate at once
-        'supported_frequencies' => ['daily', 'weekly', 'monthly'],
     ],
 
     /*
@@ -75,15 +57,7 @@ return [
     |
     */
     'time_slots' => [
-        'default_duration' => 60, // minutes
-        'min_duration' => 15, // minutes
-        'max_duration' => 480, // minutes (8 hours)
         'buffer_minutes' => 0, // Buffer time between sessions (e.g., 10 minutes between appointments)
-        'business_hours' => [
-            'start' => '09:00',
-            'end' => '17:00',
-        ],
-        'slot_intervals' => [15, 30, 60, 120], // Available slot durations
     ],
 
     /*
@@ -102,15 +76,4 @@ return [
         'allow_overlapping_periods' => false, // Allow periods to overlap within same schedule
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Event Listeners
-    |--------------------------------------------------------------------------
-    |
-    | Configure which events should be fired and handled.
-    |
-    */
-    'events' => [
-        'schedule_created' => true,
-    ],
 ];
