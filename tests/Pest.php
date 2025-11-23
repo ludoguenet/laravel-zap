@@ -1,5 +1,9 @@
 <?php
 
+use Illuminate\Database\Eloquent\Model;
+use Zap\Tests\ZapTestRoom;
+use Zap\Tests\ZapTestUser;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -47,53 +51,22 @@ expect()->extend('toBeSchedulable', function () {
 |
 */
 
-function createUser()
+function createUser(array $attributes = []): ZapTestUser
 {
-    static $instance = null;
-
-    if ($instance === null) {
-        $instance = new class extends \Illuminate\Database\Eloquent\Model
-        {
-            use \Zap\Models\Concerns\HasSchedules;
-
-            protected $table = 'users';
-
-            protected $fillable = ['name', 'email'];
-
-            public function getKey()
-            {
-                return 1; // Mock user ID
-            }
-        };
-    }
-
-    return $instance;
+    return ZapTestUser::create(array_merge([
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+    ], $attributes));
 }
 
-function createRoom()
+function createRoom(array $attributes = []): ZapTestRoom
 {
-    static $instance = null;
-
-    if ($instance === null) {
-        $instance = new class extends \Illuminate\Database\Eloquent\Model
-        {
-            use \Zap\Models\Concerns\HasSchedules;
-
-            protected $table = 'rooms';
-
-            protected $fillable = ['name', 'capacity'];
-
-            public function getKey()
-            {
-                return 1; // Mock room ID
-            }
-        };
-    }
-
-    return $instance;
+    return ZapTestRoom::create(array_merge([
+        'name' => 'Room 101',
+    ], $attributes));
 }
 
-function createScheduleFor($schedulable, array $attributes = [])
+function createScheduleFor(Model $schedulable, array $attributes = [])
 {
     $attributes = array_merge([
         'name' => 'Test Schedule',

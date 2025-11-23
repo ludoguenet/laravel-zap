@@ -125,7 +125,7 @@ class Schedule extends Model
     /**
      * Scope a query to only include schedules of a specific type.
      */
-    public function scopeOfType(Builder $query, string $type): void
+    public function scopeOfType(Builder $query, ScheduleTypes|string $type): void
     {
         $query->where('schedule_type', $type);
     }
@@ -135,7 +135,7 @@ class Schedule extends Model
      */
     public function scopeAvailability(Builder $query): void
     {
-        $query->where('schedule_type', ScheduleTypes::AVAILABILITY);
+        $query->where('schedule_type', ScheduleTypes::AVAILABILITY->value);
     }
 
     /**
@@ -143,7 +143,7 @@ class Schedule extends Model
      */
     public function scopeAppointments(Builder $query): void
     {
-        $query->where('schedule_type', ScheduleTypes::APPOINTMENT);
+        $query->where('schedule_type', ScheduleTypes::APPOINTMENT->value);
     }
 
     /**
@@ -151,7 +151,7 @@ class Schedule extends Model
      */
     public function scopeBlocked(Builder $query): void
     {
-        $query->where('schedule_type', ScheduleTypes::BLOCKED);
+        $query->where('schedule_type', ScheduleTypes::BLOCKED->value);
     }
 
     /**

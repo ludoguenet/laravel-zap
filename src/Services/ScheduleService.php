@@ -50,9 +50,6 @@ class ScheduleService
                 }
             }
 
-            // Note: Conflict checking is now done during validation phase
-            // No need to check again after creation
-
             // Fire the created event
             Event::dispatch(new ScheduleCreated($schedule));
 

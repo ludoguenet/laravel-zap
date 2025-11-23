@@ -70,8 +70,15 @@ it('can check availability', function () {
     expect($user->isAvailableAt('2025-01-01', '10:00', '11:00'))->toBeTrue();
 });
 
-it('can get available slots', function () {
+it('can get bookable slots', function () {
     $user = createUser();
+
+    // Create availability schedule
+    Zap::for($user)
+        ->availability()
+        ->from('2025-01-01')
+        ->addPeriod('09:00', '12:00')
+        ->save();
 
     // Create a schedule that blocks 09:00-10:00
     Zap::for($user)
@@ -79,7 +86,7 @@ it('can get available slots', function () {
         ->addPeriod('09:00', '10:00')
         ->save();
 
-    $slots = $user->getAvailableSlots('2025-01-01', '09:00', '12:00', 60);
+    $slots = $user->getBookableSlots('2025-01-01', 60);
 
     expect($slots)->toBeArray();
     expect($slots[0]['is_available'])->toBeFalse(); // 09:00-10:00 should be unavailable
@@ -87,8 +94,15 @@ it('can get available slots', function () {
     expect($slots[2]['is_available'])->toBeTrue();  // 11:00-12:00 should be available
 });
 
-it('can find next available slot', function () {
+it('can find next bookable slot', function () {
     $user = createUser();
+
+    // Create availability schedule
+    Zap::for($user)
+        ->availability()
+        ->from('2025-01-01')
+        ->addPeriod('09:00', '17:00')
+        ->save();
 
     // Create a schedule that blocks the morning
     Zap::for($user)
@@ -96,7 +110,7 @@ it('can find next available slot', function () {
         ->addPeriod('09:00', '12:00')
         ->save();
 
-    $nextSlot = $user->getNextAvailableSlot('2025-01-01', 60, '09:00', '17:00');
+    $nextSlot = $user->getNextBookableSlot('2025-01-01', 60);
 
     expect($nextSlot)->toBeArray();
     expect($nextSlot['date'])->toBe('2025-01-01');
@@ -203,10 +217,10 @@ it('supports different schedulable types', function () {
         ->addPeriod('11:00', '12:00')
         ->save();
 
-    expect($userSchedule->schedulable_type)->toContain('Model@anonymous');
-    expect($roomSchedule->schedulable_type)->toContain('Model@anonymous');
-    expect($userSchedule->schedulable_id)->toBe(1);
-    expect($roomSchedule->schedulable_id)->toBe(1);
+    expect($userSchedule->schedulable_type)->toBe('Zap\Tests\ZapTestUser');
+    expect($roomSchedule->schedulable_type)->toBe('Zap\Tests\ZapTestRoom');
+    expect($userSchedule->schedulable_id)->toBe($user->getKey());
+    expect($roomSchedule->schedulable_id)->toBe($room->getKey());
 });
 
 it('can handle monthly recurring schedules', function () {

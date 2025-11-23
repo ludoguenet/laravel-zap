@@ -1,6 +1,6 @@
 # Buffer Time in Laravel Zap
 
-Buffer time adds configurable gaps between availability slots to accommodate setup time, cleanup, or prevent back-to-back appointments.
+Buffer time adds configurable gaps between bookable slots to accommodate setup time, cleanup, or prevent back-to-back appointments.
 
 ## Quick Start
 
@@ -19,18 +19,18 @@ Set default buffer time in `config/zap.php`:
 
 ```php
 // Use global buffer time (from config)
-$slots = $user->getBookableSlots('2025-03-15', 60);
+$slots = $doctor->getBookableSlots('2025-03-15', 60);
 
 // Override with specific buffer time
-$slots = $user->getBookableSlots('2025-03-15', 60, 15);
+$slots = $doctor->getBookableSlots('2025-03-15', 60, 15);
 
 // Explicitly disable buffer
-$slots = $user->getBookableSlots('2025-03-15', 60, 0);
+$slots = $doctor->getBookableSlots('2025-03-15', 60, 0);
 ```
 
 ## How It Works
 
-With 60-minute appointments and 15-minute buffer:
+Bookable slots respect availability schedules, existing appointments, schedule blocks, and buffer time. With 60-minute appointments and 15-minute buffer:
 - **9:00-10:00** (Appointment 1)
 - **10:15-11:15** (Appointment 2) ← 15-minute gap
 - **11:30-12:30** (Appointment 3) ← 15-minute gap
@@ -40,7 +40,7 @@ With 60-minute appointments and 15-minute buffer:
 ### getBookableSlots()
 
 ```php
-$slots = $user->getBookableSlots(
+$slots = $doctor->getBookableSlots(
     date: '2025-03-15',
     slotDuration: 60,
     bufferMinutes: 15
@@ -61,7 +61,7 @@ $slots = $user->getBookableSlots(
 ### getNextBookableSlot()
 
 ```php
-$nextSlot = $user->getNextBookableSlot(
+$nextSlot = $doctor->getNextBookableSlot(
     afterDate: '2025-03-15',
     duration: 90,
     bufferMinutes: 10
@@ -73,17 +73,41 @@ $nextSlot = $user->getNextBookableSlot(
 ### Healthcare System
 
 ```php
-// Different buffer times for different appointment types
+// First, create availability schedules
+$availability = Zap::for($doctor)
+    ->named('Office Hours')
+    ->availability()
+    ->from('2025-03-15')
+    ->to('2025-03-31')
+    ->addPeriod('09:00', '17:00')
+    ->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+    ->save();
+
+// Then retrieve bookable slots with different buffer times
 $consultationSlots = $doctor->getBookableSlots('2025-03-15', 30, 10);
 $surgerySlots = $surgeon->getBookableSlots('2025-03-15', 120, 30);
 ```
 
-### Service Business
+### Different Appointment Types
 
 ```php
-// Hair salon with cleanup time
-$haircutSlots = $stylist->getBookableSlots('2025-03-15', 45, 15);
-$coloringSlots = $stylist->getBookableSlots('2025-03-15', 120, 30);
+// Create availability schedule for a doctor
+$availability = Zap::for($doctor)
+    ->named('Office Hours')
+    ->availability()
+    ->from('2025-03-15')
+    ->to('2025-03-31')
+    ->addPeriod('09:00', '12:00')
+    ->addPeriod('14:00', '17:00')
+    ->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+    ->save();
+
+// Retrieve bookable slots with different buffer times for different appointment types
+// Short consultations need less buffer time
+$consultationSlots = $doctor->getBookableSlots('2025-03-15', 30, 10);
+
+// Longer procedures need more buffer time for preparation
+$procedureSlots = $doctor->getBookableSlots('2025-03-15', 60, 20);
 ```
 
 ## Parameter Precedence
@@ -95,12 +119,12 @@ $coloringSlots = $stylist->getBookableSlots('2025-03-15', 120, 30);
 ## Edge Cases
 
 - **Negative values**: Automatically converted to 0
-- **Large buffers**: May reduce number of available slots
+- **Large buffers**: May reduce number of bookable slots
 - **Buffer > slot duration**: Perfectly valid (e.g., 30min slots with 45min buffer)
 
 ## Best Practices
 
 1. **Match your use case**: Medical = longer buffers, quick calls = shorter buffers
-2. **Test availability**: Ensure buffer doesn't over-reduce available slots
+2. **Test availability**: Ensure buffer doesn't over-reduce bookable slots
 3. **Document clearly**: Make buffer time visible to users
 4. **Consider peak times**: Different buffers for busy vs quiet periods

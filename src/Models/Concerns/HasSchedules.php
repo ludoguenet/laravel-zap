@@ -478,7 +478,11 @@ trait HasSchedules
     {
         return Schedule::where('schedulable_type', get_class($this))
             ->where('schedulable_id', $this->getKey())
-            ->whereIn('schedule_type', [ScheduleTypes::APPOINTMENT, ScheduleTypes::BLOCKED, ScheduleTypes::CUSTOM])
+            ->whereIn('schedule_type', [
+                ScheduleTypes::APPOINTMENT->value,
+                ScheduleTypes::BLOCKED->value,
+                ScheduleTypes::CUSTOM->value,
+            ])
             ->active()
             ->forDate($date)
             ->with('periods')
