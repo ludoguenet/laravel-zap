@@ -94,6 +94,29 @@ it('can get bookable slots', function () {
     expect($slots[2]['is_available'])->toBeTrue();  // 11:00-12:00 should be available
 });
 
+it('can check if a date is bookable using isBookableAt', function () {
+    $user = createUser();
+
+    // Create availability schedule
+    Zap::for($user)
+        ->availability()
+        ->from('2025-01-01')
+        ->addPeriod('09:00', '12:00')
+        ->save();
+
+    // Initially, the date should be bookable (no blocking schedules)
+    expect($user->isBookableAt('2025-01-01', 60))->toBeTrue();
+
+    // Block all availability on that date
+    Zap::for($user)
+        ->from('2025-01-01')
+        ->addPeriod('09:00', '12:00')
+        ->save();
+
+    // With a full blocking schedule, no bookable slots should remain
+    expect($user->isBookableAt('2025-01-01', 60))->toBeFalse();
+});
+
 it('can find next bookable slot', function () {
     $user = createUser();
 

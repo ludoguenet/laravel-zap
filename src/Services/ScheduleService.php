@@ -162,7 +162,7 @@ class ScheduleService
     /**
      * Check if a schedulable is available at a specific time.
      *
-     * @deprecated This method is deprecated. Use isAvailableAt() on the schedulable model instead.
+     * @deprecated This method is deprecated. Use isBookableAt() or getBookableSlots() on the schedulable model instead.
      */
     public function isAvailable(
         Model $schedulable,
@@ -171,9 +171,16 @@ class ScheduleService
         string $endTime
     ): bool {
         trigger_error(
-            'ScheduleService::isAvailable() is deprecated. Use isAvailableAt() on the schedulable model instead.',
+            'ScheduleService::isAvailable() is deprecated. Use isBookableAt() or getBookableSlots() on the schedulable model instead.',
             E_USER_DEPRECATED
         );
+        if (method_exists($schedulable, 'isBookableAt')) {
+            $durationMinutes = \Carbon\Carbon::parse($date.' '.$endTime)
+                ->diffInMinutes(\Carbon\Carbon::parse($date.' '.$startTime));
+
+            return $schedulable->isBookableAt($date, $durationMinutes);
+        }
+
         if (method_exists($schedulable, 'isAvailableAt')) {
             return $schedulable->isAvailableAt($date, $startTime, $endTime);
         }
