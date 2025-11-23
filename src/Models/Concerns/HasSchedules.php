@@ -287,6 +287,8 @@ trait HasSchedules
 
     /**
      * Get available time slots for a specific date.
+     *
+     * @deprecated This method is deprecated. Use getBookableSlots() instead.
      */
     public function getAvailableSlots(
         string $date,
@@ -295,6 +297,10 @@ trait HasSchedules
         int $slotDuration = 60,
         ?int $bufferMinutes = null
     ): array {
+        trigger_error(
+            'getAvailableSlots() is deprecated. Use getBookableSlots() instead.',
+            E_USER_DEPRECATED
+        );
         // Validate inputs to prevent infinite loops
         if ($slotDuration <= 0) {
             return [];
@@ -529,6 +535,8 @@ trait HasSchedules
 
     /**
      * Get the next available time slot.
+     *
+     * @deprecated This method is deprecated. Use getNextBookableSlot() instead.
      */
     public function getNextAvailableSlot(
         ?string $afterDate = null,
@@ -537,6 +545,10 @@ trait HasSchedules
         string $dayEnd = '17:00',
         ?int $bufferMinutes = null
     ): ?array {
+        trigger_error(
+            'getNextAvailableSlot() is deprecated. Use getNextBookableSlot() instead.',
+            E_USER_DEPRECATED
+        );
         // Validate inputs
         if ($duration <= 0) {
             return null;

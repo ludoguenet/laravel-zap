@@ -205,11 +205,11 @@ $isAvailable = $doctor->isAvailableAt('2025-01-01', '10:00', '11:00');
 
 ## Buffer Time Support
 
-Buffer time can be added to availability slots to create gaps between appointments:
+Buffer time can be added to bookable slots to create gaps between appointments:
 
 ```php
-// Get availability slots with 15-minute buffer between appointments
-$slots = $doctor->getAvailableSlots('2025-01-01', '09:00', '17:00', 60, 15);
+// Get bookable slots with 15-minute buffer between appointments
+$slots = $doctor->getBookableSlots('2025-01-01', 60, 15);
 
 // Configure global buffer time in config/zap.php
 'time_slots' => [

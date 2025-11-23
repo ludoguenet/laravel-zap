@@ -201,37 +201,29 @@ $schedule->isBlocked();      // true/false
 // Check availability
 $available = $user->isAvailableAt('2025-03-15', '14:00', '16:00');
 
-// Get available slots
-$slots = $user->getAvailableSlots(
+// Get bookable slots (respects availability schedules)
+$slots = $user->getBookableSlots(
     date: '2025-03-15',
-    dayStart: '09:00',
-    dayEnd: '17:00',
     slotDuration: 60
 );
 
-// Get available slots with buffer time
-$slotsWithBuffer = $user->getAvailableSlots(
+// Get bookable slots with buffer time
+$slotsWithBuffer = $user->getBookableSlots(
     date: '2025-03-15',
-    dayStart: '09:00',
-    dayEnd: '17:00',
     slotDuration: 60,
     bufferMinutes: 15 // 15 minutes between appointments
 );
 
-// Find next available slot
-$nextSlot = $user->getNextAvailableSlot(
+// Find next bookable slot
+$nextSlot = $user->getNextBookableSlot(
     afterDate: '2025-03-15',
-    duration: 120,
-    dayStart: '09:00',
-    dayEnd: '17:00'
+    duration: 120
 );
 
-// Find next available slot with buffer time
-$nextSlotWithBuffer = $user->getNextAvailableSlot(
+// Find next bookable slot with buffer time
+$nextSlotWithBuffer = $user->getNextBookableSlot(
     afterDate: '2025-03-15',
     duration: 120,
-    dayStart: '09:00',
-    dayEnd: '17:00',
     bufferMinutes: 10
 );
 ```
@@ -245,13 +237,13 @@ $nextSlotWithBuffer = $user->getNextAvailableSlot(
 ],
 
 // Use global buffer time (falls back to config)
-$slots = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', 60);
+$slots = $user->getBookableSlots('2025-03-15', 60);
 
 // Override with specific buffer time
-$slots = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', 60, 15);
+$slots = $user->getBookableSlots('2025-03-15', 60, 15);
 
 // Explicitly disable buffer (override config)
-$slots = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', 60, 0);
+$slots = $user->getBookableSlots('2025-03-15', 60, 0);
 ```
 
 ### Conflict Management

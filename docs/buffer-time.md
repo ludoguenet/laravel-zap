@@ -19,13 +19,13 @@ Set default buffer time in `config/zap.php`:
 
 ```php
 // Use global buffer time (from config)
-$slots = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', 60);
+$slots = $user->getBookableSlots('2025-03-15', 60);
 
 // Override with specific buffer time
-$slots = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', 60, 15);
+$slots = $user->getBookableSlots('2025-03-15', 60, 15);
 
 // Explicitly disable buffer
-$slots = $user->getAvailableSlots('2025-03-15', '09:00', '17:00', 60, 0);
+$slots = $user->getBookableSlots('2025-03-15', 60, 0);
 ```
 
 ## How It Works
@@ -37,13 +37,11 @@ With 60-minute appointments and 15-minute buffer:
 
 ## API Methods
 
-### getAvailableSlots()
+### getBookableSlots()
 
 ```php
-$slots = $user->getAvailableSlots(
+$slots = $user->getBookableSlots(
     date: '2025-03-15',
-    dayStart: '09:00',
-    dayEnd: '17:00',
     slotDuration: 60,
     bufferMinutes: 15
 );
@@ -60,14 +58,12 @@ $slots = $user->getAvailableSlots(
 ]
 ```
 
-### getNextAvailableSlot()
+### getNextBookableSlot()
 
 ```php
-$nextSlot = $user->getNextAvailableSlot(
+$nextSlot = $user->getNextBookableSlot(
     afterDate: '2025-03-15',
     duration: 90,
-    dayStart: '09:00',
-    dayEnd: '17:00',
     bufferMinutes: 10
 );
 ```
@@ -78,16 +74,16 @@ $nextSlot = $user->getNextAvailableSlot(
 
 ```php
 // Different buffer times for different appointment types
-$consultationSlots = $doctor->getAvailableSlots('2025-03-15', '09:00', '17:00', 30, 10);
-$surgerySlots = $surgeon->getAvailableSlots('2025-03-15', '08:00', '16:00', 120, 30);
+$consultationSlots = $doctor->getBookableSlots('2025-03-15', 30, 10);
+$surgerySlots = $surgeon->getBookableSlots('2025-03-15', 120, 30);
 ```
 
 ### Service Business
 
 ```php
 // Hair salon with cleanup time
-$haircutSlots = $stylist->getAvailableSlots('2025-03-15', '09:00', '18:00', 45, 15);
-$coloringSlots = $stylist->getAvailableSlots('2025-03-15', '09:00', '18:00', 120, 30);
+$haircutSlots = $stylist->getBookableSlots('2025-03-15', 45, 15);
+$coloringSlots = $stylist->getBookableSlots('2025-03-15', 120, 30);
 ```
 
 ## Parameter Precedence
