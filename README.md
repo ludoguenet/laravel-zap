@@ -2,8 +2,6 @@
 
 <img src="art/logo.png?v=2" alt="Zap Logo" width="200">
 
-# ⚡ Zap for Laravel
-
 **Flexible schedule management for modern Laravel applications**
 
 [![PHP Version Require](http://poser.pugx.org/laraveljutsu/zap/require/php)](https://packagist.org/packages/laraveljutsu/zap)
@@ -11,7 +9,7 @@
 [![License](http://poser.pugx.org/laraveljutsu/zap/license)](https://packagist.org/packages/laraveljutsu/zap)
 [![Total Downloads](http://poser.pugx.org/laraveljutsu/zap/downloads)](https://packagist.org/packages/laraveljutsu/zap)
 
-[Website](https://ludovicguenet.dev) • [Documentation](https://zap-for-laravel.com) • [Support](mailto:ludo@epekta.com)
+[Website](https://ludovicguenet.dev) • [Documentation](https://laravel-zap.com) • [Support](mailto:ludo@epekta.com)
 
 </div>
 
@@ -293,6 +291,6 @@ Report vulnerabilities to **ludo@epekta.com** (please don't use the issue tracke
 
 <div align="center">
 
-**Made with ❤️ by [Laravel Jutsu](https://www.youtube.com/@LaravelJutsu) for the Laravel community**
+**Made with 💛 by [Ludovic Guénet](https://www.ludovicguenet.dev) for the Laravel community**
 
 </div>
