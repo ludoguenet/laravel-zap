@@ -8,6 +8,7 @@ describe('Improved Validation Error Messages', function () {
     beforeEach(function () {
         config([
             'zap.validation.require_future_dates' => true,
+            'zap.default_rules.max_duration.enabled' => true,
             'zap.validation.min_period_duration' => 15,
             'zap.validation.max_period_duration' => 480,
             'zap.validation.allow_overlapping_periods' => false,
