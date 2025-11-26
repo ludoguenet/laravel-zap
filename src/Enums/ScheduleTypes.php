@@ -19,9 +19,7 @@ enum ScheduleTypes: string
      */
     public static function values(): array
     {
-        return collect(self::cases())
-            ->map(fn (ScheduleTypes $type): string => $type->value)
-            ->all();
+        return array_column(self::cases(), 'value');
     }
 
     /**
