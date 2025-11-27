@@ -5,6 +5,7 @@ namespace Zap\Models\Concerns;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
+use Zap\Data\FrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
@@ -225,38 +226,13 @@ trait HasSchedules
      */
     protected function shouldCreateRecurringInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
     {
-        $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
 
-        switch ($frequency) {
-            case Frequency::DAILY:
-                return true;
-
-            case Frequency::WEEKLY:
-                $allowedDays = $config['days'] ?? ['monday'];
-                $allowedDayNumbers = array_map(function ($day) {
-                    return match (strtolower($day)) {
-                        'sunday' => 0,
-                        'monday' => 1,
-                        'tuesday' => 2,
-                        'wednesday' => 3,
-                        'thursday' => 4,
-                        'friday' => 5,
-                        'saturday' => 6,
-                        default => 1, // Default to Monday
-                    };
-                }, $allowedDays);
-
-                return in_array($date->dayOfWeek, $allowedDayNumbers);
-
-            case Frequency::MONTHLY:
-                $dayOfMonth = $config['day_of_month'] ?? $schedule->start_date->day;
-
-                return $date->day === $dayOfMonth;
-
-            default:
-                return false;
+        if(! ($config instanceof FrequencyConfig)) {
+            return false;
         }
+
+        return $config->shouldCreateRecurringInstance($schedule, $date);
     }
 
     /**

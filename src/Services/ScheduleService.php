@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Zap\Builders\ScheduleBuilder;
+use Zap\Data\FrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Events\ScheduleCreated;
 use Zap\Exceptions\ScheduleConflictException;
@@ -242,23 +243,11 @@ class ScheduleService
         $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
 
-        switch ($frequency) {
-            case Frequency::DAILY:
-                return true;
-
-            case Frequency::WEEKLY:
-                $allowedDays = $config['days'] ?? [];
-
-                return empty($allowedDays) || in_array(strtolower($date->format('l')), $allowedDays);
-
-            case Frequency::MONTHLY:
-                $dayOfMonth = $config['day_of_month'] ?? $date->day;
-
-                return $date->day === $dayOfMonth;
-
-            default:
-                return false;
+        if (! $config instanceof FrequencyConfig) {
+            return false;
         }
+
+        return $config->shouldCreateInstance($date);
     }
 
     /**
@@ -268,11 +257,10 @@ class ScheduleService
     {
         $frequency = $schedule->frequency;
 
-        return match ($frequency) {
-            Frequency::DAILY => $current->copy()->addDay(),
-            Frequency::WEEKLY => $current->copy()->addWeek(),
-            Frequency::MONTHLY => $current->copy()->addMonth(),
-            default => $current->copy()->addDay(),
-        };
+        if($frequency instanceof Frequency) {
+            return $frequency->getNextRecurrence($current);
+        }
+
+        return $current->copy()->addDay();
     }
 }

@@ -68,13 +68,13 @@ describe('ScheduleBuilder', function () {
         $builder->reset();
         $weekly = $builder->for($user)->from('2025-01-01')->weekly(['monday', 'friday'])->build();
         expect($weekly['attributes']['frequency'])->toBe(Frequency::WEEKLY);
-        expect($weekly['attributes']['frequency_config'])->toBe(['days' => ['monday', 'friday']]);
+        expect($weekly['attributes']['frequency_config']->toArray())->toBe(['days' => ['monday', 'friday']]);
 
         // Test monthly
         $builder->reset();
         $monthly = $builder->for($user)->from('2025-01-01')->monthly(['day_of_month' => 15])->build();
         expect($monthly['attributes']['frequency'])->toBe(Frequency::MONTHLY);
-        expect($monthly['attributes']['frequency_config'])->toBe(['day_of_month' => 15]);
+        expect($monthly['attributes']['frequency_config']->toArray())->toBe(['days_of_month' => [15]]);
     });
 
     it('can add validation rules', function () {

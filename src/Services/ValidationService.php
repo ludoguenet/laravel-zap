@@ -655,8 +655,8 @@ class ValidationService
                 $frequency = ucfirst((is_object($conflict->frequency) ? $conflict->frequency->value : $conflict->frequency) ?? 'recurring');
                 $message .= " The conflicting schedule is a {$frequency} schedule";
 
-                if ($conflict->frequency === Frequency::WEEKLY && ! empty($conflict->frequency_config['days'])) {
-                    $days = implode(', ', array_map('ucfirst', $conflict->frequency_config['days']));
+                if ($conflict->frequency === Frequency::WEEKLY && ! empty($conflict->frequency_config->days)) {
+                    $days = implode(', ', array_map('ucfirst', $conflict->frequency_config->days));
                     $message .= " on {$days}";
                 }
 
@@ -675,8 +675,8 @@ class ValidationService
                     $frequency = ucfirst((is_object($conflict->frequency) ? $conflict->frequency->value : $conflict->frequency) ?? 'recurring');
                     $message .= " ({$frequency}";
 
-                    if ($conflict->frequency === Frequency::WEEKLY && ! empty($conflict->frequency_config['days'])) {
-                        $days = implode(', ', array_map('ucfirst', $conflict->frequency_config['days']));
+                    if ($conflict->frequency === Frequency::WEEKLY && ! empty($conflict->frequency_config->days)) {
+                        $days = implode(', ', array_map('ucfirst', $conflict->frequency_config->days));
                         $message .= " - {$days}";
                     }
 

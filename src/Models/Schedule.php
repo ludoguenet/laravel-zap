@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Zap\Casts\SafeFrequencyCast;
+use Zap\Casts\SafeFrequencyConfigCast;
+use Zap\Data\FrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 
@@ -23,7 +25,7 @@ use Zap\Enums\ScheduleTypes;
  * @property Carbon|null $end_date
  * @property bool $is_recurring
  * @property Frequency|string|null $frequency
- * @property array|null $frequency_config
+ * @property FrequencyConfig|array|null $frequency_config
  * @property array|null $metadata
  * @property bool $is_active
  * @property Carbon|null $created_at
@@ -62,7 +64,7 @@ class Schedule extends Model
         'end_date' => 'date',
         'is_recurring' => 'boolean',
         'frequency' => SafeFrequencyCast::class,
-        'frequency_config' => 'array',
+        'frequency_config' => SafeFrequencyConfigCast::class,
         'metadata' => 'array',
         'is_active' => 'boolean',
     ];
@@ -206,8 +208,8 @@ class Schedule extends Model
                         $monthly->where('is_recurring', true)
                             ->where('frequency', Frequency::MONTHLY->value)
                             ->where(function ($m) use ($dayOfMonth) {
-                                $m->whereJsonContains('frequency_config->day_of_month', $dayOfMonth)
-                                    ->orWhere('frequency_config->day_of_month', $dayOfMonth);
+                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
+                                    ->orWhere('frequency_config->days_of_month', $dayOfMonth);
                             });
                     });
             });

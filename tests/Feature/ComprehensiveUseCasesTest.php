@@ -384,7 +384,7 @@ describe('Comprehensive Use Cases - All Features', function () {
 
             expect($schedule->is_recurring)->toBeTrue();
             expect($schedule->frequency)->toBe(Frequency::WEEKLY);
-            expect($schedule->frequency_config['days'])->toBe(['monday', 'wednesday', 'friday']);
+            expect($schedule->frequency_config->days)->toBe(['monday', 'wednesday', 'friday']);
         });
 
         it('can create monthly recurring schedule with day of month', function () {
@@ -399,7 +399,7 @@ describe('Comprehensive Use Cases - All Features', function () {
 
             expect($schedule->is_recurring)->toBeTrue();
             expect($schedule->frequency)->toBe(Frequency::MONTHLY);
-            expect($schedule->frequency_config['day_of_month'])->toBe(1);
+            expect($schedule->frequency_config->days_of_month)->toBe([1]);
         });
 
         it('can create custom recurring schedule', function () {

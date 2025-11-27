@@ -5,6 +5,14 @@ namespace Zap\Builders;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Zap\Data\AnnuallyFrequencyConfig;
+use Zap\Data\BiMonthlyFrequencyConfig;
+use Zap\Data\DailyFrequencyConfig;
+use Zap\Data\FrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig;
+use Zap\Data\QuarterlyFrequencyConfig;
+use Zap\Data\SemiAnnuallyFrequencyConfig;
+use Zap\Data\WeeklyFrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
@@ -139,6 +147,7 @@ class ScheduleBuilder
     {
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = Frequency::DAILY;
+        $this->attributes['frequency_config'] = new DailyFrequencyConfig();
 
         return $this;
     }
@@ -150,7 +159,24 @@ class ScheduleBuilder
     {
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = Frequency::WEEKLY;
-        $this->attributes['frequency_config'] = ['days' => $days];
+        $this->attributes['frequency_config'] = WeeklyFrequencyConfig::fromArray([
+            'days' => $days,
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as bi-weekly recurring.
+     */
+    public function biweekly(array $days = [], CarbonInterface|string|null $startsOn = null): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::BIWEEKLY;
+        $this->attributes['frequency_config'] = WeeklyFrequencyConfig::fromArray([
+            'days' => $days,
+            'startsOn' => $startsOn,
+        ]);
 
         return $this;
     }
@@ -162,7 +188,65 @@ class ScheduleBuilder
     {
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = Frequency::MONTHLY;
-        $this->attributes['frequency_config'] = $config;
+        $this->attributes['frequency_config'] = MonthlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as bi-monthly recurring.
+     */
+    public function bimonthly(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::BIMONTHLY;
+        $this->attributes['frequency_config'] = BiMonthlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as quarterly recurring.
+     */
+    public function quarterly(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::QUARTERLY;
+        $this->attributes['frequency_config'] = QuarterlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as semi-annually recurring.
+     */
+    public function semiannually(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::SEMIANNUALLY;
+        $this->attributes['frequency_config'] = SemiAnnuallyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as annually recurring.
+     */
+    public function annually(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::ANNUALLY;
+        $this->attributes['frequency_config'] = AnnuallyFrequencyConfig::fromArray(
+            $config
+        );
 
         return $this;
     }
@@ -323,6 +407,12 @@ class ScheduleBuilder
         // Set default schedule_type if not specified
         if (! isset($this->attributes['schedule_type'])) {
             $this->attributes['schedule_type'] = ScheduleTypes::CUSTOM;
+        }
+
+        if(isset($this->attributes['frequency_config']) && $this->attributes['frequency_config'] instanceof FrequencyConfig) {
+            $this->attributes['frequency_config']->setStartFromStartDate(
+                Carbon::parse($this->attributes['start_date'])
+            );
         }
 
         return [
