@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Zap\Builders\ScheduleBuilder;
+use Zap\Enums\Frequency;
 use Zap\Events\ScheduleCreated;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Models\Schedule;
@@ -242,15 +243,15 @@ class ScheduleService
         $config = $schedule->frequency_config ?? [];
 
         switch ($frequency) {
-            case 'daily':
+            case Frequency::DAILY:
                 return true;
 
-            case 'weekly':
+            case Frequency::WEEKLY:
                 $allowedDays = $config['days'] ?? [];
 
                 return empty($allowedDays) || in_array(strtolower($date->format('l')), $allowedDays);
 
-            case 'monthly':
+            case Frequency::MONTHLY:
                 $dayOfMonth = $config['day_of_month'] ?? $date->day;
 
                 return $date->day === $dayOfMonth;
@@ -268,9 +269,9 @@ class ScheduleService
         $frequency = $schedule->frequency;
 
         return match ($frequency) {
-            'daily' => $current->copy()->addDay(),
-            'weekly' => $current->copy()->addWeek(),
-            'monthly' => $current->copy()->addMonth(),
+            Frequency::DAILY => $current->copy()->addDay(),
+            Frequency::WEEKLY => $current->copy()->addWeek(),
+            Frequency::MONTHLY => $current->copy()->addMonth(),
             default => $current->copy()->addDay(),
         };
     }

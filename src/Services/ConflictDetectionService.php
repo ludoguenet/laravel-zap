@@ -4,6 +4,7 @@ namespace Zap\Services;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
 use Zap\Models\SchedulePeriod;
@@ -263,10 +264,10 @@ class ConflictDetectionService
         $config = $schedule->frequency_config ?? [];
 
         switch ($frequency) {
-            case 'daily':
+            case Frequency::DAILY:
                 return true;
 
-            case 'weekly':
+            case Frequency::WEEKLY:
                 $allowedDays = $config['days'] ?? ['monday'];
                 $allowedDayNumbers = array_map(function ($day) {
                     return match (strtolower($day)) {
@@ -283,7 +284,7 @@ class ConflictDetectionService
 
                 return in_array($date->dayOfWeek, $allowedDayNumbers);
 
-            case 'monthly':
+            case Frequency::MONTHLY:
                 $dayOfMonth = $config['day_of_month'] ?? $schedule->start_date->day;
 
                 return $date->day === $dayOfMonth;
@@ -302,15 +303,15 @@ class ConflictDetectionService
         $config = $schedule->frequency_config ?? [];
 
         switch ($frequency) {
-            case 'daily':
+            case Frequency::DAILY:
                 return $current->copy()->addDay();
 
-            case 'weekly':
+            case Frequency::WEEKLY:
                 $allowedDays = $config['days'] ?? ['monday'];
 
                 return $this->getNextWeeklyOccurrence($current, $allowedDays);
 
-            case 'monthly':
+            case Frequency::MONTHLY:
                 $dayOfMonth = $config['day_of_month'] ?? $current->day;
 
                 return $current->copy()->addMonth()->day($dayOfMonth);

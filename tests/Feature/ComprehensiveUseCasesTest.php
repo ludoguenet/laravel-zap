@@ -1,6 +1,7 @@
 <?php
 
 use Carbon\Carbon;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
@@ -40,7 +41,7 @@ describe('Comprehensive Use Cases - All Features', function () {
             expect($schedule->description)->toBe('A schedule with all features');
             expect($schedule->schedule_type)->toBe(ScheduleTypes::AVAILABILITY);
             expect($schedule->is_recurring)->toBeTrue();
-            expect($schedule->frequency)->toBe('weekly');
+            expect($schedule->frequency)->toBe(Frequency::WEEKLY);
             expect($schedule->is_active)->toBeTrue();
             expect($schedule->metadata)->toHaveKey('department');
             expect($schedule->metadata)->toHaveKey('priority');
@@ -368,7 +369,7 @@ describe('Comprehensive Use Cases - All Features', function () {
                 ->save();
 
             expect($schedule->is_recurring)->toBeTrue();
-            expect($schedule->frequency)->toBe('daily');
+            expect($schedule->frequency)->toBe(Frequency::DAILY);
         });
 
         it('can create weekly recurring schedule with specific days', function () {
@@ -382,7 +383,7 @@ describe('Comprehensive Use Cases - All Features', function () {
                 ->save();
 
             expect($schedule->is_recurring)->toBeTrue();
-            expect($schedule->frequency)->toBe('weekly');
+            expect($schedule->frequency)->toBe(Frequency::WEEKLY);
             expect($schedule->frequency_config['days'])->toBe(['monday', 'wednesday', 'friday']);
         });
 
@@ -397,7 +398,7 @@ describe('Comprehensive Use Cases - All Features', function () {
                 ->save();
 
             expect($schedule->is_recurring)->toBeTrue();
-            expect($schedule->frequency)->toBe('monthly');
+            expect($schedule->frequency)->toBe(Frequency::MONTHLY);
             expect($schedule->frequency_config['day_of_month'])->toBe(1);
         });
 

@@ -1,5 +1,6 @@
 <?php
 
+use Zap\Enums\Frequency;
 use Zap\Exceptions\InvalidScheduleException;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
@@ -32,7 +33,7 @@ it('can create recurring weekly schedule', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('weekly');
+    expect($schedule->frequency)->toBe(Frequency::WEEKLY);
     expect($schedule->frequency_config)->toBe(['days' => ['monday', 'wednesday', 'friday']]);
 });
 
@@ -187,7 +188,7 @@ it('can create complex recurring schedule', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('weekly');
+    expect($schedule->frequency)->toBe(Frequency::WEEKLY);
     expect($schedule->periods)->toHaveCount(2);
     expect($schedule->description)->toBe('Available for consultations');
 });
@@ -258,7 +259,7 @@ it('can handle monthly recurring schedules', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('monthly');
+    expect($schedule->frequency)->toBe(Frequency::MONTHLY);
     expect($schedule->frequency_config)->toBe(['day_of_month' => 1]);
 });
 

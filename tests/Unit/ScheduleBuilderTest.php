@@ -1,6 +1,7 @@
 <?php
 
 use Zap\Builders\ScheduleBuilder;
+use Zap\Enums\Frequency;
 use Zap\Models\Schedule;
 
 describe('ScheduleBuilder', function () {
@@ -25,7 +26,7 @@ describe('ScheduleBuilder', function () {
         expect($built['attributes'])->toHaveKey('start_date', '2025-01-01');
         expect($built['attributes'])->toHaveKey('end_date', '2025-12-31');
         expect($built['attributes'])->toHaveKey('is_recurring', true);
-        expect($built['attributes'])->toHaveKey('frequency', 'weekly');
+        expect($built['attributes'])->toHaveKey('frequency', Frequency::WEEKLY);
         expect($built['periods'])->toHaveCount(1);
         expect($built['periods'][0])->toMatchArray([
             'start_time' => '09:00',
@@ -61,18 +62,18 @@ describe('ScheduleBuilder', function () {
 
         // Test daily
         $daily = $builder->for($user)->from('2025-01-01')->daily()->build();
-        expect($daily['attributes']['frequency'])->toBe('daily');
+        expect($daily['attributes']['frequency'])->toBe(Frequency::DAILY);
 
         // Test weekly
         $builder->reset();
         $weekly = $builder->for($user)->from('2025-01-01')->weekly(['monday', 'friday'])->build();
-        expect($weekly['attributes']['frequency'])->toBe('weekly');
+        expect($weekly['attributes']['frequency'])->toBe(Frequency::WEEKLY);
         expect($weekly['attributes']['frequency_config'])->toBe(['days' => ['monday', 'friday']]);
 
         // Test monthly
         $builder->reset();
         $monthly = $builder->for($user)->from('2025-01-01')->monthly(['day_of_month' => 15])->build();
-        expect($monthly['attributes']['frequency'])->toBe('monthly');
+        expect($monthly['attributes']['frequency'])->toBe(Frequency::MONTHLY);
         expect($monthly['attributes']['frequency_config'])->toBe(['day_of_month' => 15]);
     });
 
@@ -236,7 +237,7 @@ describe('ScheduleBuilder', function () {
         expect($built['attributes']['start_date'])->toBe('2025-01-01');
         expect($built['attributes']['end_date'])->toBe('2025-12-31');
         expect($built['attributes']['is_recurring'])->toBe(true);
-        expect($built['attributes']['frequency'])->toBe('weekly');
+        expect($built['attributes']['frequency'])->toBe(Frequency::WEEKLY);
         expect($built['periods'])->toHaveCount(1);
     });
 

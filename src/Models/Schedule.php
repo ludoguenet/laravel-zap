@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Zap\Casts\SafeFrequencyCast;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 
 /**
@@ -20,7 +22,7 @@ use Zap\Enums\ScheduleTypes;
  * @property Carbon $start_date
  * @property Carbon|null $end_date
  * @property bool $is_recurring
- * @property string|null $frequency
+ * @property Frequency|string|null $frequency
  * @property array|null $frequency_config
  * @property array|null $metadata
  * @property bool $is_active
@@ -59,6 +61,7 @@ class Schedule extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'is_recurring' => 'boolean',
+        'frequency' => SafeFrequencyCast::class,
         'frequency_config' => 'array',
         'metadata' => 'array',
         'is_active' => 'boolean',
@@ -184,7 +187,7 @@ class Schedule extends Model
                 //
                     ->orWhere(function ($daily) {
                         $daily->where('is_recurring', true)
-                            ->where('frequency', 'daily');
+                            ->where('frequency', Frequency::DAILY->value);
                     })
 
                 //
@@ -192,7 +195,7 @@ class Schedule extends Model
                 //
                     ->orWhere(function ($weekly) use ($weekday) {
                         $weekly->where('is_recurring', true)
-                            ->where('frequency', 'weekly')
+                            ->where('frequency', Frequency::WEEKLY->value)
                             ->whereJsonContains('frequency_config->days', $weekday);
                     })
 
@@ -201,7 +204,7 @@ class Schedule extends Model
                 //
                     ->orWhere(function ($monthly) use ($dayOfMonth) {
                         $monthly->where('is_recurring', true)
-                            ->where('frequency', 'monthly')
+                            ->where('frequency', Frequency::MONTHLY->value)
                             ->where(function ($m) use ($dayOfMonth) {
                                 $m->whereJsonContains('frequency_config->day_of_month', $dayOfMonth)
                                     ->orWhere('frequency_config->day_of_month', $dayOfMonth);

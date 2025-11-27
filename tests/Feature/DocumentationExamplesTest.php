@@ -1,5 +1,6 @@
 <?php
 
+use Zap\Enums\Frequency;
 use Zap\Facades\Zap;
 use Zap\Models\Schedule;
 
@@ -113,7 +114,7 @@ describe('Documentation Examples Verification', function () {
             ->addPeriod('09:00', '09:30')
             ->save();
         expect($daily->is_recurring)->toBeTrue();
-        expect($daily->frequency)->toBe('daily');
+        expect($daily->frequency)->toBe(Frequency::DAILY);
 
         // Weekly - use availability type
         $weekly = Zap::for($user2)
@@ -125,7 +126,7 @@ describe('Documentation Examples Verification', function () {
             ->addPeriod('09:00', '17:00')
             ->save();
         expect($weekly->is_recurring)->toBeTrue();
-        expect($weekly->frequency)->toBe('weekly');
+        expect($weekly->frequency)->toBe(Frequency::WEEKLY);
 
         // Monthly - use availability type
         $monthly = Zap::for($user3)
@@ -137,7 +138,7 @@ describe('Documentation Examples Verification', function () {
             ->addPeriod('10:00', '11:00')
             ->save();
         expect($monthly->is_recurring)->toBeTrue();
-        expect($monthly->frequency)->toBe('monthly');
+        expect($monthly->frequency)->toBe(Frequency::MONTHLY);
     });
 
     it('verifies Date Ranges examples', function () {

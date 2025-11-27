@@ -5,6 +5,7 @@ namespace Zap\Builders;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
 use Zap\Services\ScheduleService;
@@ -137,7 +138,7 @@ class ScheduleBuilder
     public function daily(): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'daily';
+        $this->attributes['frequency'] = Frequency::DAILY;
 
         return $this;
     }
@@ -148,7 +149,7 @@ class ScheduleBuilder
     public function weekly(array $days = []): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'weekly';
+        $this->attributes['frequency'] = Frequency::WEEKLY;
         $this->attributes['frequency_config'] = ['days' => $days];
 
         return $this;
@@ -160,7 +161,7 @@ class ScheduleBuilder
     public function monthly(array $config = []): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'monthly';
+        $this->attributes['frequency'] = Frequency::MONTHLY;
         $this->attributes['frequency_config'] = $config;
 
         return $this;
@@ -169,7 +170,7 @@ class ScheduleBuilder
     /**
      * Set custom recurring frequency.
      */
-    public function recurring(string $frequency, array $config = []): self
+    public function recurring(string|Frequency $frequency, array $config = []): self
     {
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = $frequency;

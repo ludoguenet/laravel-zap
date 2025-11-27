@@ -5,6 +5,7 @@ namespace Zap\Models\Concerns;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
 use Zap\Services\ConflictDetectionService;
@@ -228,10 +229,10 @@ trait HasSchedules
         $config = $schedule->frequency_config ?? [];
 
         switch ($frequency) {
-            case 'daily':
+            case Frequency::DAILY:
                 return true;
 
-            case 'weekly':
+            case Frequency::WEEKLY:
                 $allowedDays = $config['days'] ?? ['monday'];
                 $allowedDayNumbers = array_map(function ($day) {
                     return match (strtolower($day)) {
@@ -248,7 +249,7 @@ trait HasSchedules
 
                 return in_array($date->dayOfWeek, $allowedDayNumbers);
 
-            case 'monthly':
+            case Frequency::MONTHLY:
                 $dayOfMonth = $config['day_of_month'] ?? $schedule->start_date->day;
 
                 return $date->day === $dayOfMonth;
