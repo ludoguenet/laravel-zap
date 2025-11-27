@@ -106,20 +106,14 @@ class Schedule extends Model
         return new Collection($models);
     }
 
-    /**
-     * Scope a query to only include active schedules.
-     */
-    public function scopeActive(Builder $query): void
+    public function scopeActive(Builder $query, bool $active = true): void
     {
-        $query->where('is_active', true);
+        $query->where('is_active', $active);
     }
 
-    /**
-     * Scope a query to only include recurring schedules.
-     */
-    public function scopeRecurring(Builder $query): void
+    public function scopeRecurring(Builder $query, bool $recurring = true): void
     {
-        $query->where('is_recurring', true);
+        $query->where('is_recurring', $recurring);
     }
 
     /**
