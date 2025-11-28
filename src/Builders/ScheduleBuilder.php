@@ -257,11 +257,17 @@ class ScheduleBuilder
      */
     public function recurring(string|Frequency $frequency, array|FrequencyConfig $config = []): self
     {
+        // Check if frequency is a valid enum value and convert config accordingly for backward compatibility
         if(is_string($frequency)) {
             $frequency = Frequency::tryFrom($frequency) ?? $frequency;
-            $config = $frequency instanceof Frequency ?
-                $frequency->configClass()::fromArray($config) :
-                $config;
+            if ($frequency instanceof Frequency) {
+                $configClass = $frequency->configClass();
+                if($config instanceof FrequencyConfig && !($config instanceof $configClass)) {
+                    throw new \InvalidArgumentException("Invalid config class for frequency {$frequency->value}. Expected ". $configClass);
+                }
+                $config = $config instanceof $configClass ?  $config :
+                    $frequency->configClass()::fromArray($config);
+            }
         }
 
         $this->attributes['is_recurring'] = true;
