@@ -7,32 +7,17 @@ on:
     branches: [main, develop]
 
 jobs:
-  test-sqlite:
+  test:
     runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          coverage: none
-
-      - name: Install Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-
-      - name: Execute tests (SQLite)
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ':memory:'
-        run: ./vendor/bin/pest --parallel
-
-  test-mysql:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4', '8.5']
+        database: [sqlite, mysql, postgres]
 
     services:
       mysql:
+        if: matrix.database == 'mysql'
         image: mysql:8.0
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: false
@@ -42,33 +27,8 @@ jobs:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          coverage: none
-
-      - name: Install Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-
-      - name: Execute tests (MySQL)
-        env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: laravel_test
-          DB_USERNAME: root
-          DB_PASSWORD: password
-        run: ./vendor/bin/pest
-
-  test-postgres:
-    runs-on: ubuntu-latest
-
-    services:
       postgres:
+        if: matrix.database == 'postgres'
         image: postgres:15
         env:
           POSTGRES_USER: postgres
@@ -84,13 +44,32 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ matrix.php-version }}
           coverage: none
 
       - name: Install Dependencies
         run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
+      - name: Execute tests (SQLite)
+        if: matrix.database == 'sqlite'
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: ./vendor/bin/pest --parallel
+
+      - name: Execute tests (MySQL)
+        if: matrix.database == 'mysql'
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: laravel_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
+        run: ./vendor/bin/pest
+
       - name: Execute tests (PostgreSQL)
+        if: matrix.database == 'postgres'
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
