@@ -228,7 +228,7 @@ trait HasSchedules
     {
         $config = $schedule->frequency_config ?? [];
 
-        if(! ($config instanceof FrequencyConfig)) {
+        if (! ($config instanceof FrequencyConfig)) {
             return false;
         }
 
@@ -522,8 +522,8 @@ trait HasSchedules
         $startDate = $afterDate ?? now()->format('Y-m-d');
         $checkDate = \Carbon\Carbon::parse($startDate);
 
-        // Check up to 30 days in the future
-        for ($i = 0; $i < 30; $i++) {
+        // Check up to 365 days in the future to cover all recurring frequencies
+        for ($i = 0; $i < 365; $i++) {
             $dateString = $checkDate->format('Y-m-d');
             $slots = $this->getBookableSlots($dateString, $duration, $bufferMinutes);
 

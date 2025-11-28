@@ -61,6 +61,7 @@ enum Frequency: string
             self::MONTHLY,
             self::BIMONTHLY,
             self::QUARTERLY,
+            self::SEMIANNUALLY,
             self::ANNUALLY,
         ];
     }
