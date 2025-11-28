@@ -263,7 +263,7 @@ class ConflictDetectionService
     {
         $config = $schedule->frequency_config ?? [];
 
-        if(! $config instanceof FrequencyConfig) {
+        if(! ($config instanceof FrequencyConfig)) {
             return false;
         }
 
@@ -277,7 +277,7 @@ class ConflictDetectionService
     {
         $config = $schedule->frequency_config ?? [];
 
-        if (! $config instanceof FrequencyConfig) {
+        if (! ($config instanceof FrequencyConfig)) {
             return $current->copy()->addDay();
         }
 

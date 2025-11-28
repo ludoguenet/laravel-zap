@@ -46,4 +46,22 @@ enum Frequency: string
             self::ANNUALLY => \Zap\Data\AnnuallyFrequencyConfig::class,
         };
     }
+
+    public static function filteredByWeekday(): array
+    {
+        return [
+            self::WEEKLY,
+            self::BIWEEKLY,
+        ];
+    }
+
+    public static function filteredByDaysOfMonth(): array
+    {
+        return [
+            self::MONTHLY,
+            self::BIMONTHLY,
+            self::QUARTERLY,
+            self::ANNUALLY,
+        ];
+    }
 }

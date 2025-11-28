@@ -1,6 +1,11 @@
 <?php
 
 use Zap\Builders\ScheduleBuilder;
+use Zap\Data\AnnuallyFrequencyConfig;
+use Zap\Data\BiMonthlyFrequencyConfig;
+use Zap\Data\BiWeeklyFrequencyConfig;
+use Zap\Data\QuarterlyFrequencyConfig;
+use Zap\Data\SemiAnnuallyFrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Models\Schedule;
 
@@ -75,6 +80,106 @@ describe('ScheduleBuilder', function () {
         $monthly = $builder->for($user)->from('2025-01-01')->monthly(['day_of_month' => 15])->build();
         expect($monthly['attributes']['frequency'])->toBe(Frequency::MONTHLY);
         expect($monthly['attributes']['frequency_config']->toArray())->toBe(['days_of_month' => [15]]);
+
+        // Test bi-weekly
+        $builder->reset();
+        $biweekly = $builder->for($user)->from('2025-01-06')->biweekly(['monday'])->build();
+        expect($biweekly['attributes']['frequency'])->toBe(Frequency::BIWEEKLY);
+        expect($biweekly['attributes']['frequency_config'])->toBeInstanceOf(BiWeeklyFrequencyConfig::class);
+        expect($biweekly['attributes']['frequency_config']->days)->toBe(['monday']);
+        expect($biweekly['attributes']['frequency_config']->startsOn->toDateString())->toBe('2025-01-06');
+
+        // Test bi-monthly
+        $builder->reset();
+        $bimonthly = $builder->for($user)->from('2025-01-05')->bimonthly(['day_of_month' => 5])->build();
+        expect($bimonthly['attributes']['frequency'])->toBe(Frequency::BIMONTHLY);
+        expect($bimonthly['attributes']['frequency_config'])->toBeInstanceOf(BiMonthlyFrequencyConfig::class);
+        expect($bimonthly['attributes']['frequency_config']->days_of_month)->toBe([5]);
+        expect($bimonthly['attributes']['frequency_config']->start_month)->toBe(1);
+
+        // Test quarterly
+        $builder->reset();
+        $quarterly = $builder->for($user)->from('2025-02-15')->quarterly(['days_of_month' => [15]])->build();
+        expect($quarterly['attributes']['frequency'])->toBe(Frequency::QUARTERLY);
+        expect($quarterly['attributes']['frequency_config'])->toBeInstanceOf(QuarterlyFrequencyConfig::class);
+        expect($quarterly['attributes']['frequency_config']->days_of_month)->toBe([15]);
+        expect($quarterly['attributes']['frequency_config']->start_month)->toBe(2);
+
+        // Test semi-annually
+        $builder->reset();
+        $semiannual = $builder->for($user)->from('2025-03-10')->semiannually(['day_of_month' => 10])->build();
+        expect($semiannual['attributes']['frequency'])->toBe(Frequency::SEMIANNUALLY);
+        expect($semiannual['attributes']['frequency_config'])->toBeInstanceOf(SemiAnnuallyFrequencyConfig::class);
+        expect($semiannual['attributes']['frequency_config']->days_of_month)->toBe([10]);
+        expect($semiannual['attributes']['frequency_config']->start_month)->toBe(3);
+
+        // Test annually
+        $builder->reset();
+        $annually = $builder->for($user)->from('2025-04-01')->annually(['day_of_month' => 1])->build();
+        expect($annually['attributes']['frequency'])->toBe(Frequency::ANNUALLY);
+        expect($annually['attributes']['frequency_config'])->toBeInstanceOf(AnnuallyFrequencyConfig::class);
+        expect($annually['attributes']['frequency_config']->days_of_month)->toBe([1]);
+        expect($annually['attributes']['frequency_config']->start_month)->toBe(4);
+    });
+
+    it('respects custom anchors for recurring frequencies', function () {
+        $user = createUser();
+        $builder = new ScheduleBuilder;
+
+        // Bi-weekly with explicit startsOn (should not be overridden by from())
+        $biweekly = $builder
+            ->for($user)
+            ->from('2025-02-03')
+            ->biweekly(['wednesday'], '2025-01-27') // Start anchor on previous Monday
+            ->build();
+
+        expect($biweekly['attributes']['frequency_config'])->toBeInstanceOf(BiWeeklyFrequencyConfig::class);
+        expect($biweekly['attributes']['frequency_config']->startsOn->toDateString())->toBe('2025-01-27');
+        expect($biweekly['attributes']['frequency_config']->days)->toBe(['wednesday']);
+
+        // Bi-monthly with custom start_month and multiple days
+        $builder->reset();
+        $bimonthly = $builder
+            ->for($user)
+            ->from('2025-01-05')
+            ->bimonthly(['days_of_month' => [3, 18], 'start_month' => 2])
+            ->build();
+        expect($bimonthly['attributes']['frequency_config'])->toBeInstanceOf(BiMonthlyFrequencyConfig::class);
+        expect($bimonthly['attributes']['frequency_config']->days_of_month)->toBe([3, 18]);
+        expect($bimonthly['attributes']['frequency_config']->start_month)->toBe(2);
+
+        // Quarterly with custom start_month
+        $builder->reset();
+        $quarterly = $builder
+            ->for($user)
+            ->from('2025-01-10')
+            ->quarterly(['day_of_month' => 7, 'start_month' => 4])
+            ->build();
+        expect($quarterly['attributes']['frequency_config'])->toBeInstanceOf(QuarterlyFrequencyConfig::class);
+        expect($quarterly['attributes']['frequency_config']->days_of_month)->toBe([7]);
+        expect($quarterly['attributes']['frequency_config']->start_month)->toBe(4);
+
+        // Semi-annually with custom start_month
+        $builder->reset();
+        $semiannual = $builder
+            ->for($user)
+            ->from('2025-01-10')
+            ->semiannually(['day_of_month' => 12, 'start_month' => 6])
+            ->build();
+        expect($semiannual['attributes']['frequency_config'])->toBeInstanceOf(SemiAnnuallyFrequencyConfig::class);
+        expect($semiannual['attributes']['frequency_config']->days_of_month)->toBe([12]);
+        expect($semiannual['attributes']['frequency_config']->start_month)->toBe(6);
+
+        // Annually with custom start_month
+        $builder->reset();
+        $annually = $builder
+            ->for($user)
+            ->from('2025-01-10')
+            ->annually(['day_of_month' => 25, 'start_month' => 9])
+            ->build();
+        expect($annually['attributes']['frequency_config'])->toBeInstanceOf(AnnuallyFrequencyConfig::class);
+        expect($annually['attributes']['frequency_config']->days_of_month)->toBe([25]);
+        expect($annually['attributes']['frequency_config']->start_month)->toBe(9);
     });
 
     it('can add validation rules', function () {

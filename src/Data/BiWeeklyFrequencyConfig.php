@@ -11,15 +11,18 @@ use Zap\Models\Schedule;
  */
 class BiWeeklyFrequencyConfig extends FrequencyConfig
 {
-    public CarbonInterface|null $startsOn;
+    public ?CarbonInterface $startsOn = null;
 
     public function __construct(
         public array $days = [],
         CarbonInterface|string|null $startsOn = null,
     ) {
-        if (is_string($startsOn)) {
-            $this->startsOn = Carbon::parse($startsOn);
+        if ($startsOn === null) {
             return;
+        }
+
+        if (is_string($startsOn)) {
+            $startsOn = Carbon::parse($startsOn);
         }
 
         $this->startsOn = $startsOn->copy()->startOfWeek(
@@ -29,7 +32,7 @@ class BiWeeklyFrequencyConfig extends FrequencyConfig
 
     public static function fromArray(array $data): self
     {
-        if (!array_key_exists('days', $data) || !is_array($data['days'])) {
+        if (! array_key_exists('days', $data) || ! is_array($data['days'])) {
             throw new \InvalidArgumentException("Missing 'days' key in BiWeeklyFrequencyConfig data array.");
         }
 
@@ -41,6 +44,10 @@ class BiWeeklyFrequencyConfig extends FrequencyConfig
 
     public function setStartFromStartDate(CarbonInterface $startDate): self
     {
+        if ($this->startsOn !== null) {
+            return $this;
+        }
+
         $this->startsOn = $startDate->copy()->startOfWeek(
             config()->integer('zap.calendar.week_start', CarbonInterface::MONDAY)
         );
@@ -54,8 +61,9 @@ class BiWeeklyFrequencyConfig extends FrequencyConfig
             $this->startsOn->diffInWeeks($date) % 2 === 0;
     }
 
-    public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool {
-        $allowedDays = !empty($this->days) ? $this->days : ['monday'];
+    public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    {
+        $allowedDays = ! empty($this->days) ? $this->days : ['monday'];
         $allowedDayNumbers = array_map(function ($day) {
             return match (strtolower($day)) {
                 'sunday' => 0,
@@ -81,6 +89,15 @@ class BiWeeklyFrequencyConfig extends FrequencyConfig
     protected function getNextBiWeeklyOccurrence(\Carbon\CarbonInterface $current, array $allowedDays): \Carbon\CarbonInterface
     {
         $next = $current->copy()->addDay();
+        $weekStart = config()->integer('zap.calendar.week_start', CarbonInterface::MONDAY);
+
+        if ($this->startsOn === null) {
+            $this->startsOn = $current->copy()->startOfWeek($weekStart);
+        }
+
+        if (empty($allowedDays)) {
+            $allowedDays = ['monday'];
+        }
 
         // Convert day names to numbers (0 = Sunday, 1 = Monday, etc.)
         $allowedDayNumbers = array_map(function ($day) {
@@ -97,11 +114,11 @@ class BiWeeklyFrequencyConfig extends FrequencyConfig
         }, $allowedDays);
 
         // Find the next allowed day
-        while (! in_array($next->dayOfWeek, $allowedDayNumbers) && $this->startsOn->diffInWeeks($next) % 2 !== 0) {
+        while (! in_array($next->dayOfWeek, $allowedDayNumbers) || $this->startsOn->diffInWeeks($next) % 2 !== 0) {
             $next = $next->addDay();
 
             // Prevent infinite loop
-            if ($next->diffInDays($current) > 14) {
+            if ($next->diffInDays($current) > 28) {
                 break;
             }
         }

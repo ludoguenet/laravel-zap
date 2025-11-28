@@ -7,6 +7,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Zap\Data\AnnuallyFrequencyConfig;
 use Zap\Data\BiMonthlyFrequencyConfig;
+use Zap\Data\BiWeeklyFrequencyConfig;
 use Zap\Data\DailyFrequencyConfig;
 use Zap\Data\FrequencyConfig;
 use Zap\Data\MonthlyFrequencyConfig;
@@ -173,7 +174,7 @@ class ScheduleBuilder
     {
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = Frequency::BIWEEKLY;
-        $this->attributes['frequency_config'] = WeeklyFrequencyConfig::fromArray([
+        $this->attributes['frequency_config'] = BiWeeklyFrequencyConfig::fromArray([
             'days' => $days,
             'startsOn' => $startsOn,
         ]);

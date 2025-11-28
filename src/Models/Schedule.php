@@ -193,20 +193,28 @@ class Schedule extends Model
                     })
 
                 //
-                // 3️⃣ WEEKLY — match weekday inside config
+                // 3️⃣ WEEKLY | BI-WEEKLY — match weekday inside config
                 //
                     ->orWhere(function ($weekly) use ($weekday) {
                         $weekly->where('is_recurring', true)
-                            ->where('frequency', Frequency::WEEKLY->value)
+                            ->whereIn('frequency',
+                                array_map(
+                                    fn (Frequency $frequency) => $frequency->value, Frequency::filteredByWeekday()
+                                )
+                            )
                             ->whereJsonContains('frequency_config->days', $weekday);
                     })
 
                 //
-                // 4️⃣ MONTHLY — match day_of_month from config
+                // 5️⃣ MONTHLY — match day_of_month from config
                 //
                     ->orWhere(function ($monthly) use ($dayOfMonth) {
                         $monthly->where('is_recurring', true)
-                            ->where('frequency', Frequency::MONTHLY->value)
+                            ->whereIn('frequency',
+                                array_map(
+                                    fn (Frequency $frequency) => $frequency->value, Frequency::filteredByDaysOfMonth()
+                                )
+                            )
                             ->where(function ($m) use ($dayOfMonth) {
                                 $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
                                     ->orWhere('frequency_config->days_of_month', $dayOfMonth);

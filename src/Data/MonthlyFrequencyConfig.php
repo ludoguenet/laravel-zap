@@ -19,6 +19,7 @@ class MonthlyFrequencyConfig extends FrequencyConfig
     {
         if (array_key_exists('day_of_month', $data) && !array_key_exists('days_of_month', $data)) {
             $data['days_of_month'] = [$data['day_of_month']];
+            unset($data['day_of_month']);
         }
 
         return new self(

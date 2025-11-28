@@ -20,6 +20,7 @@ class AnnuallyFrequencyConfig extends FrequencyConfig
     {
         if(array_key_exists('day_of_month', $data) && !array_key_exists('days_of_month', $data)) {
             $data['days_of_month'] = [$data['day_of_month']];
+            unset($data['day_of_month']);
         }
 
         return new self(
@@ -42,7 +43,9 @@ class AnnuallyFrequencyConfig extends FrequencyConfig
 
     public function setStartFromStartDate(CarbonInterface $startDate): self
     {
-        $this->start_month = $startDate->month;
+        if ($this->start_month === null) {
+            $this->start_month = $startDate->month;
+        }
 
         return $this;
     }

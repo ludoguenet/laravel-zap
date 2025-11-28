@@ -243,7 +243,7 @@ class ScheduleService
         $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
 
-        if (! $config instanceof FrequencyConfig) {
+        if (! ($config instanceof FrequencyConfig)) {
             return false;
         }
 
