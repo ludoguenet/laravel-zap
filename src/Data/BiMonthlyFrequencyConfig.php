@@ -11,14 +11,14 @@ use Zap\Models\Schedule;
 class BiMonthlyFrequencyConfig extends FrequencyConfig
 {
     public function __construct(
-        public array|null $days_of_month = [],
-        public int|null   $start_month = null,
-    )
-    {}
+        public ?array $days_of_month = [],
+        public ?int $start_month = null,
+    ) {
+    }
 
     public static function fromArray(array $data): self
     {
-        if (array_key_exists('day_of_month', $data) && !array_key_exists('days_of_month', $data)) {
+        if (array_key_exists('day_of_month', $data) && ! array_key_exists('days_of_month', $data)) {
             $data['days_of_month'] = [$data['day_of_month']];
             unset($data['day_of_month']);
         }
@@ -43,9 +43,10 @@ class BiMonthlyFrequencyConfig extends FrequencyConfig
         $daysOfMonth = $this->days_of_month ?? [$current->day];
         if ($current->day >= max($daysOfMonth)) {
             $dayOfMonth = min($daysOfMonth);
+
             return $current->copy()->addMonths(2)->day($dayOfMonth);
         }
-        $dayOfMonth = min(array_filter($daysOfMonth, fn($day) => $day > $current->day));
+        $dayOfMonth = min(array_filter($daysOfMonth, fn ($day) => $day > $current->day));
 
         return $current->copy()->day($dayOfMonth);
     }

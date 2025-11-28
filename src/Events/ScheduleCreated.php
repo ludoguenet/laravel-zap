@@ -9,14 +9,16 @@ use Zap\Models\Schedule;
 
 class ScheduleCreated
 {
-    use Dispatchable, SerializesModels;
+    use Dispatchable;
+    use SerializesModels;
 
     /**
      * Create a new event instance.
      */
     public function __construct(
         public Schedule $schedule
-    ) {}
+    ) {
+    }
 
     /**
      * Get the schedule that was created.

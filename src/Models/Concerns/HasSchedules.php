@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
 use Zap\Data\FrequencyConfig;
-use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
 use Zap\Services\ConflictDetectionService;
@@ -116,7 +115,7 @@ trait HasSchedules
      */
     public function createSchedule(): ScheduleBuilder
     {
-        return (new ScheduleBuilder)->for($this);
+        return (new ScheduleBuilder())->for($this);
     }
 
     /**

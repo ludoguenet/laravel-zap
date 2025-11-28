@@ -258,14 +258,14 @@ class ScheduleBuilder
     public function recurring(string|Frequency $frequency, array|FrequencyConfig $config = []): self
     {
         // Check if frequency is a valid enum value and convert config accordingly for backward compatibility
-        if(is_string($frequency)) {
+        if (is_string($frequency)) {
             $frequency = Frequency::tryFrom($frequency) ?? $frequency;
             if ($frequency instanceof Frequency) {
                 $configClass = $frequency->configClass();
-                if($config instanceof FrequencyConfig && !($config instanceof $configClass)) {
-                    throw new \InvalidArgumentException("Invalid config class for frequency {$frequency->value}. Expected ". $configClass);
+                if ($config instanceof FrequencyConfig && ! ($config instanceof $configClass)) {
+                    throw new \InvalidArgumentException("Invalid config class for frequency {$frequency->value}. Expected ".$configClass);
                 }
-                $config = $config instanceof $configClass ?  $config :
+                $config = $config instanceof $configClass ? $config :
                     $frequency->configClass()::fromArray($config);
             }
         }
@@ -423,7 +423,7 @@ class ScheduleBuilder
             $this->attributes['schedule_type'] = ScheduleTypes::CUSTOM;
         }
 
-        if(isset($this->attributes['frequency_config']) && $this->attributes['frequency_config'] instanceof FrequencyConfig) {
+        if (isset($this->attributes['frequency_config']) && $this->attributes['frequency_config'] instanceof FrequencyConfig) {
             $this->attributes['frequency_config']->setStartFromStartDate(
                 Carbon::parse($this->attributes['start_date'])
             );
@@ -494,7 +494,7 @@ class ScheduleBuilder
      */
     public function clone(): self
     {
-        $clone = new self;
+        $clone = new self();
         $clone->schedulable = $this->schedulable;
         $clone->attributes = $this->attributes;
         $clone->periods = $this->periods;

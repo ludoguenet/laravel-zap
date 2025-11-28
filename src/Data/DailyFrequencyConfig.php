@@ -21,7 +21,8 @@ class DailyFrequencyConfig extends FrequencyConfig
         return true;
     }
 
-    public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool {
+    public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    {
         return true;
     }
 }

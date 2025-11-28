@@ -9,7 +9,6 @@ use Zap\Models\Schedule;
 
 class SafeFrequencyConfigCast implements CastsAttributes
 {
-
     public function get(Model $model, string $key, mixed $value, array $attributes)
     {
         /** @var Schedule $schedule */
@@ -18,7 +17,7 @@ class SafeFrequencyConfigCast implements CastsAttributes
 
         $frequency = $schedule->frequency;
 
-        if (!$frequency || $configArray === null) {
+        if (! $frequency || $configArray === null) {
             return null;
         }
 

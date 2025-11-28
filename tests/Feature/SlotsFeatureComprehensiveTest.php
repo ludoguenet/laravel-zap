@@ -36,7 +36,9 @@ describe('Comprehensive Slots Feature Tests', function () {
             expect($slots15)->toHaveCount(16); // 4 hours = 16 slots of 15 minutes
 
             // Check that 10:00-12:00 slots are blocked
-            $blockedSlots15 = array_filter($slots15, fn ($slot) => $slot['start_time'] >= '10:00' && $slot['start_time'] < '12:00'
+            $blockedSlots15 = array_filter(
+                $slots15,
+                fn ($slot) => $slot['start_time'] >= '10:00' && $slot['start_time'] < '12:00'
             );
             foreach ($blockedSlots15 as $slot) {
                 expect($slot['is_available'])->toBeFalse(
@@ -118,7 +120,8 @@ describe('Comprehensive Slots Feature Tests', function () {
             foreach ($slots as $slot) {
                 $startTime = $slot['start_time'];
                 if (isset($expected[$startTime])) {
-                    expect($slot['is_available'])->toBe($expected[$startTime],
+                    expect($slot['is_available'])->toBe(
+                        $expected[$startTime],
                         "Slot {$startTime} availability mismatch"
                     );
                 }
@@ -246,7 +249,8 @@ describe('Comprehensive Slots Feature Tests', function () {
             foreach ($slots as $slot) {
                 $startTime = $slot['start_time'];
                 if (isset($expected[$startTime])) {
-                    expect($slot['is_available'])->toBe($expected[$startTime],
+                    expect($slot['is_available'])->toBe(
+                        $expected[$startTime],
                         "Slot {$startTime} availability mismatch in recurring schedule"
                     );
                 }

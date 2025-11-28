@@ -17,7 +17,8 @@ class ScheduleService
     public function __construct(
         private ValidationService $validator,
         private ConflictDetectionService $conflictService
-    ) {}
+    ) {
+    }
 
     /**
      * Create a new schedule with validation and conflict detection.
@@ -110,7 +111,7 @@ class ScheduleService
      */
     public function for(Model $schedulable): ScheduleBuilder
     {
-        return (new ScheduleBuilder)->for($schedulable);
+        return (new ScheduleBuilder())->for($schedulable);
     }
 
     /**
@@ -118,7 +119,7 @@ class ScheduleService
      */
     public function schedule(): ScheduleBuilder
     {
-        return new ScheduleBuilder;
+        return new ScheduleBuilder();
     }
 
     /**
@@ -202,7 +203,7 @@ class ScheduleService
             return $schedulable->schedulesForDateRange($startDate, $endDate)->get();
         }
 
-        return new \Illuminate\Database\Eloquent\Collection;
+        return new \Illuminate\Database\Eloquent\Collection();
     }
 
     /**
@@ -257,7 +258,7 @@ class ScheduleService
     {
         $frequency = $schedule->frequency;
 
-        if($frequency instanceof Frequency) {
+        if ($frequency instanceof Frequency) {
             return $frequency->getNextRecurrence($current);
         }
 

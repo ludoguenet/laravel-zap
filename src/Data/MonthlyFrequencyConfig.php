@@ -10,14 +10,13 @@ use Zap\Models\Schedule;
 class MonthlyFrequencyConfig extends FrequencyConfig
 {
     public function __construct(
-        public array|null $days_of_month
-    )
-    {
+        public ?array $days_of_month
+    ) {
     }
 
     public static function fromArray(array $data): self
     {
-        if (array_key_exists('day_of_month', $data) && !array_key_exists('days_of_month', $data)) {
+        if (array_key_exists('day_of_month', $data) && ! array_key_exists('days_of_month', $data)) {
             $data['days_of_month'] = [$data['day_of_month']];
             unset($data['day_of_month']);
         }
@@ -32,9 +31,10 @@ class MonthlyFrequencyConfig extends FrequencyConfig
         $daysOfMonth = $this->days_of_month ?? [$current->day];
         if ($current->day >= max($daysOfMonth)) {
             $dayOfMonth = min($daysOfMonth);
+
             return $current->copy()->addMonth()->day($dayOfMonth);
         }
-        $dayOfMonth = min(array_filter($daysOfMonth, fn($day) => $day > $current->day));
+        $dayOfMonth = min(array_filter($daysOfMonth, fn ($day) => $day > $current->day));
 
         return $current->copy()->day($dayOfMonth);
     }
@@ -43,7 +43,7 @@ class MonthlyFrequencyConfig extends FrequencyConfig
     {
         $daysOfMonth = $this->days_of_month ?? [$date->day];
 
-        return  in_array($date->day, $daysOfMonth);
+        return in_array($date->day, $daysOfMonth);
     }
 
     public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool

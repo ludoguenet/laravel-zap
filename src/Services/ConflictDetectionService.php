@@ -5,7 +5,6 @@ namespace Zap\Services;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Zap\Data\FrequencyConfig;
-use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
 use Zap\Models\SchedulePeriod;
@@ -263,7 +262,7 @@ class ConflictDetectionService
     {
         $config = $schedule->frequency_config ?? [];
 
-        if(! ($config instanceof FrequencyConfig)) {
+        if (! ($config instanceof FrequencyConfig)) {
             return false;
         }
 

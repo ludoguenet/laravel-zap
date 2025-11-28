@@ -11,11 +11,12 @@ class WeeklyFrequencyConfig extends FrequencyConfig
 {
     public function __construct(
         public array $days = []
-    ) {}
+    ) {
+    }
 
     public static function fromArray(array $data): self
     {
-        if (!array_key_exists('days', $data)) {
+        if (! array_key_exists('days', $data)) {
             throw new \InvalidArgumentException("Missing 'days' key in WeeklyFrequencyConfig data array.");
         }
 
@@ -34,8 +35,9 @@ class WeeklyFrequencyConfig extends FrequencyConfig
         return empty($this->days) || in_array(strtolower($date->format('l')), $this->days);
     }
 
-    public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool {
-        $allowedDays = !empty($this->days) ? $this->days : ['monday'];
+    public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    {
+        $allowedDays = ! empty($this->days) ? $this->days : ['monday'];
         $allowedDayNumbers = array_map(function ($day) {
             return match (strtolower($day)) {
                 'sunday' => 0,

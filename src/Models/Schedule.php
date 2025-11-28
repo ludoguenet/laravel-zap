@@ -197,9 +197,11 @@ class Schedule extends Model
                 //
                     ->orWhere(function ($weekly) use ($weekday) {
                         $weekly->where('is_recurring', true)
-                            ->whereIn('frequency',
+                            ->whereIn(
+                                'frequency',
                                 array_map(
-                                    fn (Frequency $frequency) => $frequency->value, Frequency::filteredByWeekday()
+                                    fn (Frequency $frequency) => $frequency->value,
+                                    Frequency::filteredByWeekday()
                                 )
                             )
                             ->whereJsonContains('frequency_config->days', $weekday);
@@ -210,9 +212,11 @@ class Schedule extends Model
                 //
                     ->orWhere(function ($monthly) use ($dayOfMonth) {
                         $monthly->where('is_recurring', true)
-                            ->whereIn('frequency',
+                            ->whereIn(
+                                'frequency',
                                 array_map(
-                                    fn (Frequency $frequency) => $frequency->value, Frequency::filteredByDaysOfMonth()
+                                    fn (Frequency $frequency) => $frequency->value,
+                                    Frequency::filteredByDaysOfMonth()
                                 )
                             )
                             ->where(function ($m) use ($dayOfMonth) {
