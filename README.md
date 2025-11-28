@@ -5,7 +5,8 @@
 **Flexible schedule management for modern Laravel applications**
 
 [![PHP Version Require](http://poser.pugx.org/laraveljutsu/zap/require/php)](https://packagist.org/packages/laraveljutsu/zap)
-[![Laravel Version](https://img.shields.io/badge/Laravel-11.0+-FF2D20?style=flat&logo=laravel)](https://laravel.com)
+[![PHP Version](https://img.shields.io/badge/PHP-%E2%89%A48.5-777BB4?style=flat&logo=php)](https://www.php.net/)
+[![Laravel Version](https://img.shields.io/badge/Laravel-%E2%89%A412.0-FF2D20?style=flat&logo=laravel)](https://laravel.com)
 [![License](http://poser.pugx.org/laraveljutsu/zap/license)](https://packagist.org/packages/laraveljutsu/zap)
 [![Total Downloads](http://poser.pugx.org/laraveljutsu/zap/downloads)](https://packagist.org/packages/laraveljutsu/zap)
 
@@ -25,7 +26,7 @@ A comprehensive calendar and scheduling system for Laravel. Manage availabilitie
 
 ## 📦 Installation
 
-**Requirements:** PHP 8.2+ • Laravel 11.0+
+**Requirements:** PHP ≤8.5 • Laravel ≤12.0
 
 ```bash
 composer require laraveljutsu/zap
