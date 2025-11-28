@@ -255,8 +255,15 @@ class ScheduleBuilder
     /**
      * Set custom recurring frequency.
      */
-    public function recurring(string|Frequency $frequency, array $config = []): self
+    public function recurring(string|Frequency $frequency, array|FrequencyConfig $config = []): self
     {
+        if(is_string($frequency)) {
+            $frequency = Frequency::tryFrom($frequency) ?? $frequency;
+            $config = $frequency instanceof Frequency ?
+                $frequency->configClass()::fromArray($config) :
+                $config;
+        }
+
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = $frequency;
         $this->attributes['frequency_config'] = $config;
