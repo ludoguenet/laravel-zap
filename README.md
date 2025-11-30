@@ -111,8 +111,23 @@ $schedule->daily()->from('2025-01-01')->to('2025-12-31');
 // Weekly (specific days)
 $schedule->weekly(['monday', 'wednesday', 'friday'])->forYear(2025);
 
-// Monthly
-$schedule->monthly(['day_of_month' => 1])->forYear(2025);
+// Bi-weekly (week of the start date by default, optional anchor)
+$schedule->biweekly(['tuesday', 'thursday'])->from('2025-01-07')->to('2025-03-31');
+
+// Monthly (supports multiple days)
+$schedule->monthly(['days_of_month' => [1, 15]])->forYear(2025);
+
+// Bi-monthly (multiple days, optional start_month anchor)
+$schedule->bimonthly(['days_of_month' => [5, 20], 'start_month' => 2])->from('2025-01-05')->to('2025-06-30');
+
+// Quarterly (multiple days, optional start_month anchor)
+$schedule->quarterly(['days_of_month' => [7, 21], 'start_month' => 2])->from('2025-02-15')->to('2025-11-15');
+
+// Semi-annually (multiple days, optional start_month anchor)
+$schedule->semiannually(['days_of_month' => [10], 'start_month' => 3])->from('2025-03-10')->to('2025-12-10');
+
+// Annually (multiple days, optional start_month anchor)
+$schedule->annually(['days_of_month' => [1, 15], 'start_month' => 4])->from('2025-04-01')->to('2026-04-01');
 ```
 
 ### Date Ranges

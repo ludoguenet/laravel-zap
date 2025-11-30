@@ -249,4 +249,37 @@ describe('Recurring Schedule Query Issue #31', function () {
         expect($wednesdaySchedules)->toHaveCount(0, 'Should return no schedules for Wednesday');
     });
 
+    it('queries extended recurring frequencies correctly', function () {
+        $user = createUser();
+
+        Zap::for($user)
+            ->availability()
+            ->named('Bi-Monthly Availability')
+            ->from('2025-01-05')
+            ->to('2025-03-31')
+            ->addPeriod('09:00', '11:00')
+            ->bimonthly(['days_of_month' => [5, 20]])
+            ->save();
+
+        Zap::for($user)
+            ->availability()
+            ->named('Quarterly Availability')
+            ->from('2025-02-15')
+            ->to('2025-11-15')
+            ->addPeriod('13:00', '15:00')
+            ->quarterly(['day_of_month' => 15])
+            ->save();
+
+        $jan5 = Schedule::active()->forDate('2025-01-05')->get();
+        $jan20 = Schedule::active()->forDate('2025-01-20')->get();
+        $jan10 = Schedule::active()->forDate('2025-01-10')->get();
+        $may15 = Schedule::active()->forDate('2025-05-15')->get();
+
+        expect($jan5)->not()->toBeEmpty();
+        expect($jan20)->not()->toBeEmpty();
+        expect($jan10)->toBeEmpty();
+        expect($may15)->toHaveCount(1); // Quarterly
+        expect($may15->first()->name)->toBe('Quarterly Availability');
+    });
+
 });

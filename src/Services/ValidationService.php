@@ -3,6 +3,7 @@
 namespace Zap\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use Zap\Enums\Frequency;
 use Zap\Exceptions\InvalidScheduleException;
 
 class ValidationService
@@ -651,11 +652,11 @@ class ValidationService
 
             // Add details about the conflict
             if ($conflict->is_recurring) {
-                $frequency = ucfirst($conflict->frequency ?? 'recurring');
+                $frequency = ucfirst((is_object($conflict->frequency) ? $conflict->frequency->value : $conflict->frequency) ?? 'recurring');
                 $message .= " The conflicting schedule is a {$frequency} schedule";
 
-                if ($conflict->frequency === 'weekly' && ! empty($conflict->frequency_config['days'])) {
-                    $days = implode(', ', array_map('ucfirst', $conflict->frequency_config['days']));
+                if ($conflict->frequency === Frequency::WEEKLY && ! empty($conflict->frequency_config->days)) {
+                    $days = implode(', ', array_map('ucfirst', $conflict->frequency_config->days));
                     $message .= " on {$days}";
                 }
 
@@ -671,11 +672,11 @@ class ValidationService
                 $message .= "\n• {$conflictName}";
 
                 if ($conflict->is_recurring) {
-                    $frequency = ucfirst($conflict->frequency ?? 'recurring');
+                    $frequency = ucfirst((is_object($conflict->frequency) ? $conflict->frequency->value : $conflict->frequency) ?? 'recurring');
                     $message .= " ({$frequency}";
 
-                    if ($conflict->frequency === 'weekly' && ! empty($conflict->frequency_config['days'])) {
-                        $days = implode(', ', array_map('ucfirst', $conflict->frequency_config['days']));
+                    if ($conflict->frequency === Frequency::WEEKLY && ! empty($conflict->frequency_config->days)) {
+                        $days = implode(', ', array_map('ucfirst', $conflict->frequency_config->days));
                         $message .= " - {$days}";
                     }
 

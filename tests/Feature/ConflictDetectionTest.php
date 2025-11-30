@@ -306,4 +306,25 @@ describe('Availability Checking', function () {
         expect($nextSlot['start_time'])->toBe('09:00');
     });
 
+    it('detects conflicts for extended recurring frequencies on the anchor day', function () {
+        $user = createUser();
+
+        // Existing appointment on the anchor Monday
+        Zap::for($user)
+            ->appointment()
+            ->from('2025-01-06')
+            ->addPeriod('09:00', '10:00')
+            ->save();
+
+        // Bi-weekly appointment starting on the same anchor day should conflict
+        expect(function () use ($user) {
+            Zap::for($user)
+                ->appointment()
+                ->biweekly(['monday'])
+                ->from('2025-01-06')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        })->toThrow(ScheduleConflictException::class);
+    });
+
 });

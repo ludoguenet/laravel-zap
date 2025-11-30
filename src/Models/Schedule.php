@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Zap\Casts\SafeFrequencyCast;
+use Zap\Casts\SafeFrequencyConfigCast;
+use Zap\Data\FrequencyConfig;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 
 /**
@@ -20,8 +24,8 @@ use Zap\Enums\ScheduleTypes;
  * @property Carbon $start_date
  * @property Carbon|null $end_date
  * @property bool $is_recurring
- * @property string|null $frequency
- * @property array|null $frequency_config
+ * @property Frequency|string|null $frequency
+ * @property FrequencyConfig|array|null $frequency_config
  * @property array|null $metadata
  * @property bool $is_active
  * @property Carbon|null $created_at
@@ -59,7 +63,8 @@ class Schedule extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'is_recurring' => 'boolean',
-        'frequency_config' => 'array',
+        'frequency' => SafeFrequencyCast::class,
+        'frequency_config' => SafeFrequencyConfigCast::class,
         'metadata' => 'array',
         'is_active' => 'boolean',
     ];
@@ -178,27 +183,39 @@ class Schedule extends Model
                 //
                     ->orWhere(function ($daily) {
                         $daily->where('is_recurring', true)
-                            ->where('frequency', 'daily');
+                            ->where('frequency', Frequency::DAILY->value);
                     })
 
                 //
-                // 3️⃣ WEEKLY — match weekday inside config
+                // 3️⃣ WEEKLY | BI-WEEKLY — match weekday inside config
                 //
                     ->orWhere(function ($weekly) use ($weekday) {
                         $weekly->where('is_recurring', true)
-                            ->where('frequency', 'weekly')
+                            ->whereIn(
+                                'frequency',
+                                array_map(
+                                    fn (Frequency $frequency) => $frequency->value,
+                                    Frequency::filteredByWeekday()
+                                )
+                            )
                             ->whereJsonContains('frequency_config->days', $weekday);
                     })
 
                 //
-                // 4️⃣ MONTHLY — match day_of_month from config
+                // 5️⃣ MONTHLY — match day_of_month from config
                 //
                     ->orWhere(function ($monthly) use ($dayOfMonth) {
                         $monthly->where('is_recurring', true)
-                            ->where('frequency', 'monthly')
+                            ->whereIn(
+                                'frequency',
+                                array_map(
+                                    fn (Frequency $frequency) => $frequency->value,
+                                    Frequency::filteredByDaysOfMonth()
+                                )
+                            )
                             ->where(function ($m) use ($dayOfMonth) {
-                                $m->whereJsonContains('frequency_config->day_of_month', $dayOfMonth)
-                                    ->orWhere('frequency_config->day_of_month', $dayOfMonth);
+                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
+                                    ->orWhere('frequency_config->days_of_month', $dayOfMonth);
                             });
                     });
             });

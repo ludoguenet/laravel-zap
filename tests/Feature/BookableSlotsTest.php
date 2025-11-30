@@ -226,3 +226,153 @@ it('handles availability schedules outside date range', function () {
 
     expect($slots)->toBeEmpty();
 });
+
+it('supports extended recurring frequencies when building bookable slots', function () {
+    $user = createUser();
+
+    // Bi-weekly availability on Mondays starting Jan 6 (skip following week)
+    Zap::for($user)
+        ->availability()
+        ->biweekly(['monday'])
+        ->from('2025-01-06')
+        ->to('2025-02-28')
+        ->addPeriod('09:00', '11:00')
+        ->save();
+
+    // Bi-monthly availability on the 5th and 20th
+    Zap::for($user)
+        ->availability()
+        ->bimonthly(['days_of_month' => [5, 20]])
+        ->from('2025-01-05')
+        ->to('2025-03-31')
+        ->addPeriod('13:00', '15:00')
+        ->save();
+
+    $biweeklySlotsAnchor = $user->getBookableSlots('2025-01-06', 60);
+    $biweeklySlotsSkipWeek = $user->getBookableSlots('2025-01-13', 60);
+    $biweeklySlotsNext = $user->getBookableSlots('2025-01-20', 60);
+
+    expect($biweeklySlotsAnchor)->not()->toBeEmpty();
+    expect($biweeklySlotsSkipWeek)->toBeEmpty();
+    expect($biweeklySlotsNext)->not()->toBeEmpty();
+
+    $bimonthlySlotsDay5 = $user->getBookableSlots('2025-01-05', 60);
+    $bimonthlySlotsDay10 = $user->getBookableSlots('2025-01-10', 60);
+    $bimonthlySlotsDay20 = $user->getBookableSlots('2025-01-20', 60);
+
+    expect($bimonthlySlotsDay5)->not()->toBeEmpty();
+    expect($bimonthlySlotsDay10)->toBeEmpty();
+    expect($bimonthlySlotsDay20)->not()->toBeEmpty();
+});
+
+dataset('bookable_slots_recurring_cases', [
+    'daily' => [[
+        'make' => function ($user) {
+            Zap::for($user)->availability()
+                ->daily()
+                ->from('2025-01-01')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        },
+        'expected_dates' => ['2025-01-01', '2025-01-02'],
+        'off_dates' => ['2024-12-31'],
+    ]],
+    'weekly multi-day' => [[
+        'make' => function ($user) {
+            Zap::for($user)->availability()
+                ->weekly(['wednesday', 'friday'])
+                ->from('2025-01-01') // Wednesday
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        },
+        'expected_dates' => ['2025-01-01', '2025-01-03', '2025-01-08'],
+        'off_dates' => ['2025-01-02'],
+    ]],
+    'biweekly multi-day' => [[
+        'make' => function ($user) {
+            Zap::for($user)->availability()
+                ->biweekly(['monday', 'wednesday'])
+                ->from('2025-01-06')
+                ->to('2025-02-28')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        },
+        'expected_dates' => ['2025-01-06', '2025-01-08', '2025-01-20', '2025-01-22'],
+        'off_dates' => ['2025-01-13', '2025-01-15', '2025-01-27', '2025-01-29'],
+    ]],
+    'monthly multi-day' => [[
+        'make' => function ($user) {
+            Zap::for($user)->availability()
+                ->monthly(['days_of_month' => [5, 20]])
+                ->from('2025-01-05')
+                ->to('2025-06-30')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        },
+        'expected_dates' => ['2025-01-05', '2025-01-20', '2025-02-05'],
+        'off_dates' => ['2025-01-06'],
+    ]],
+    'bimonthly multi-day' => [[
+        'make' => function ($user) {
+            Zap::for($user)->availability()
+                ->bimonthly(['days_of_month' => [5, 20], 'start_month' => 1])
+                ->from('2025-01-05')
+                ->to('2025-06-30')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        },
+        'expected_dates' => ['2025-01-05', '2025-01-20', '2025-03-05', '2025-03-20'],
+        'off_dates' => ['2025-01-10', '2025-02-05', '2025-02-20'],
+    ]],
+    'quarterly multi-day' => [[
+        'make' => function ($user) {
+            Zap::for($user)->availability()
+                ->quarterly(['days_of_month' => [5, 20], 'start_month' => 2])
+                ->from('2025-02-15')
+                ->to('2025-11-15')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        },
+        'expected_dates' => ['2025-02-20', '2025-05-05', '2025-05-20'],
+        'off_dates' => ['2025-03-15'],
+    ]],
+    'semiannual multi-day' => [[
+        'make' => function ($user) {
+            Zap::for($user)->availability()
+                ->semiannually(['days_of_month' => [10, 25], 'start_month' => 3])
+                ->from('2025-03-10')
+                ->to('2025-12-10')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        },
+        'expected_dates' => ['2025-03-10', '2025-03-25', '2025-09-10'],
+        'off_dates' => ['2025-04-10'],
+    ]],
+    'annual multi-day' => [[
+        'make' => function ($user) {
+            Zap::for($user)->availability()
+                ->annually(['days_of_month' => [1, 15], 'start_month' => 4])
+                ->from('2025-04-01')
+                ->to('2026-04-01')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        },
+        'expected_dates' => ['2025-04-01', '2025-04-15', '2026-04-01'],
+        'off_dates' => ['2025-04-02'],
+    ]],
+]);
+
+it('builds slots for all supported recurring frequencies', function ($case) {
+    $user = createUser();
+    $case['make']($user);
+
+    foreach ($case['expected_dates'] as $expectedDate) {
+        $expectedSlots = $user->getBookableSlots($expectedDate, 60);
+        expect($expectedSlots)->not()->toBeEmpty("Failed asserting slots on {$expectedDate}");
+    }
+
+    foreach ($case['off_dates'] as $offDate) {
+        $offSlots = $user->getBookableSlots($offDate, 60);
+        expect($offSlots)->toBeEmpty("Failed asserting no slots on {$offDate}");
+    }
+})->with('bookable_slots_recurring_cases');

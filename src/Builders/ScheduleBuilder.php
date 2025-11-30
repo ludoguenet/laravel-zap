@@ -5,6 +5,16 @@ namespace Zap\Builders;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Zap\Data\AnnuallyFrequencyConfig;
+use Zap\Data\BiMonthlyFrequencyConfig;
+use Zap\Data\BiWeeklyFrequencyConfig;
+use Zap\Data\DailyFrequencyConfig;
+use Zap\Data\FrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig;
+use Zap\Data\QuarterlyFrequencyConfig;
+use Zap\Data\SemiAnnuallyFrequencyConfig;
+use Zap\Data\WeeklyFrequencyConfig;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
 use Zap\Services\ScheduleService;
@@ -137,7 +147,8 @@ class ScheduleBuilder
     public function daily(): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'daily';
+        $this->attributes['frequency'] = Frequency::DAILY;
+        $this->attributes['frequency_config'] = new DailyFrequencyConfig();
 
         return $this;
     }
@@ -148,8 +159,25 @@ class ScheduleBuilder
     public function weekly(array $days = []): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'weekly';
-        $this->attributes['frequency_config'] = ['days' => $days];
+        $this->attributes['frequency'] = Frequency::WEEKLY;
+        $this->attributes['frequency_config'] = WeeklyFrequencyConfig::fromArray([
+            'days' => $days,
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as bi-weekly recurring.
+     */
+    public function biweekly(array $days = [], CarbonInterface|string|null $startsOn = null): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::BIWEEKLY;
+        $this->attributes['frequency_config'] = BiWeeklyFrequencyConfig::fromArray([
+            'days' => $days,
+            'startsOn' => $startsOn,
+        ]);
 
         return $this;
     }
@@ -160,8 +188,66 @@ class ScheduleBuilder
     public function monthly(array $config = []): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'monthly';
-        $this->attributes['frequency_config'] = $config;
+        $this->attributes['frequency'] = Frequency::MONTHLY;
+        $this->attributes['frequency_config'] = MonthlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as bi-monthly recurring.
+     */
+    public function bimonthly(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::BIMONTHLY;
+        $this->attributes['frequency_config'] = BiMonthlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as quarterly recurring.
+     */
+    public function quarterly(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::QUARTERLY;
+        $this->attributes['frequency_config'] = QuarterlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as semi-annually recurring.
+     */
+    public function semiannually(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::SEMIANNUALLY;
+        $this->attributes['frequency_config'] = SemiAnnuallyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as annually recurring.
+     */
+    public function annually(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::ANNUALLY;
+        $this->attributes['frequency_config'] = AnnuallyFrequencyConfig::fromArray(
+            $config
+        );
 
         return $this;
     }
@@ -169,8 +255,21 @@ class ScheduleBuilder
     /**
      * Set custom recurring frequency.
      */
-    public function recurring(string $frequency, array $config = []): self
+    public function recurring(string|Frequency $frequency, array|FrequencyConfig $config = []): self
     {
+        // Check if frequency is a valid enum value and convert config accordingly for backward compatibility
+        if (is_string($frequency)) {
+            $frequency = Frequency::tryFrom($frequency) ?? $frequency;
+            if ($frequency instanceof Frequency) {
+                $configClass = $frequency->configClass();
+                if ($config instanceof FrequencyConfig && ! ($config instanceof $configClass)) {
+                    throw new \InvalidArgumentException("Invalid config class for frequency {$frequency->value}. Expected ".$configClass);
+                }
+                $config = $config instanceof $configClass ? $config :
+                    $frequency->configClass()::fromArray($config);
+            }
+        }
+
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = $frequency;
         $this->attributes['frequency_config'] = $config;
@@ -324,6 +423,12 @@ class ScheduleBuilder
             $this->attributes['schedule_type'] = ScheduleTypes::CUSTOM;
         }
 
+        if (isset($this->attributes['frequency_config']) && $this->attributes['frequency_config'] instanceof FrequencyConfig) {
+            $this->attributes['frequency_config']->setStartFromStartDate(
+                Carbon::parse($this->attributes['start_date'])
+            );
+        }
+
         return [
             'schedulable' => $this->schedulable,
             'attributes' => $this->attributes,
@@ -389,7 +494,7 @@ class ScheduleBuilder
      */
     public function clone(): self
     {
-        $clone = new self;
+        $clone = new self();
         $clone->schedulable = $this->schedulable;
         $clone->attributes = $this->attributes;
         $clone->periods = $this->periods;

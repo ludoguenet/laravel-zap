@@ -1,6 +1,15 @@
 <?php
 
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
+use Zap\Data\AnnuallyFrequencyConfig;
+use Zap\Data\BiMonthlyFrequencyConfig;
+use Zap\Data\BiWeeklyFrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig;
+use Zap\Data\QuarterlyFrequencyConfig;
+use Zap\Data\SemiAnnuallyFrequencyConfig;
+use Zap\Data\WeeklyFrequencyConfig;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
@@ -40,7 +49,7 @@ describe('Comprehensive Use Cases - All Features', function () {
             expect($schedule->description)->toBe('A schedule with all features');
             expect($schedule->schedule_type)->toBe(ScheduleTypes::AVAILABILITY);
             expect($schedule->is_recurring)->toBeTrue();
-            expect($schedule->frequency)->toBe('weekly');
+            expect($schedule->frequency)->toBe(Frequency::WEEKLY);
             expect($schedule->is_active)->toBeTrue();
             expect($schedule->metadata)->toHaveKey('department');
             expect($schedule->metadata)->toHaveKey('priority');
@@ -368,7 +377,7 @@ describe('Comprehensive Use Cases - All Features', function () {
                 ->save();
 
             expect($schedule->is_recurring)->toBeTrue();
-            expect($schedule->frequency)->toBe('daily');
+            expect($schedule->frequency)->toBe(Frequency::DAILY);
         });
 
         it('can create weekly recurring schedule with specific days', function () {
@@ -382,8 +391,8 @@ describe('Comprehensive Use Cases - All Features', function () {
                 ->save();
 
             expect($schedule->is_recurring)->toBeTrue();
-            expect($schedule->frequency)->toBe('weekly');
-            expect($schedule->frequency_config['days'])->toBe(['monday', 'wednesday', 'friday']);
+            expect($schedule->frequency)->toBe(Frequency::WEEKLY);
+            expect($schedule->frequency_config->days)->toBe(['monday', 'wednesday', 'friday']);
         });
 
         it('can create monthly recurring schedule with day of month', function () {
@@ -397,8 +406,96 @@ describe('Comprehensive Use Cases - All Features', function () {
                 ->save();
 
             expect($schedule->is_recurring)->toBeTrue();
-            expect($schedule->frequency)->toBe('monthly');
-            expect($schedule->frequency_config['day_of_month'])->toBe(1);
+            expect($schedule->frequency)->toBe(Frequency::MONTHLY);
+            expect($schedule->frequency_config->days_of_month)->toBe([1]);
+        });
+
+        it('can create bi-weekly recurring schedule with start week from start date', function () {
+            $user = createUser();
+            config(['zap.calendar.week_start' => CarbonInterface::MONDAY]);
+
+            $schedule = Zap::for($user)
+                ->biweekly(['tuesday'])
+                ->from('2025-01-07')
+                ->to('2025-02-28')
+                ->addPeriod('09:00', '11:00')
+                ->save();
+
+            expect($schedule->is_recurring)->toBeTrue();
+            expect($schedule->frequency)->toBe(Frequency::BIWEEKLY);
+            expect($schedule->frequency_config)->toBeInstanceOf(BiWeeklyFrequencyConfig::class);
+            expect($schedule->frequency_config->days)->toBe(['tuesday']);
+            expect($schedule->frequency_config->startsOn->toDateString())->toBe(
+                Carbon::parse('2025-01-07')->startOfWeek(CarbonInterface::MONDAY)->toDateString()
+            );
+        });
+
+        it('can create bi-monthly recurring schedule with multiple days of month', function () {
+            $user = createUser();
+
+            $schedule = Zap::for($user)
+                ->bimonthly(['days_of_month' => [5, 20]])
+                ->from('2025-01-05')
+                ->to('2025-06-30')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+
+            expect($schedule->is_recurring)->toBeTrue();
+            expect($schedule->frequency)->toBe(Frequency::BIMONTHLY);
+            expect($schedule->frequency_config)->toBeInstanceOf(BiMonthlyFrequencyConfig::class);
+            expect($schedule->frequency_config->days_of_month)->toBe([5, 20]);
+            expect($schedule->frequency_config->start_month)->toBe(1);
+        });
+
+        it('can create quarterly recurring schedule with start month tracking', function () {
+            $user = createUser();
+
+            $schedule = Zap::for($user)
+                ->quarterly(['day_of_month' => 15])
+                ->from('2025-02-15')
+                ->to('2025-11-15')
+                ->addPeriod('13:00', '14:00')
+                ->save();
+
+            expect($schedule->is_recurring)->toBeTrue();
+            expect($schedule->frequency)->toBe(Frequency::QUARTERLY);
+            expect($schedule->frequency_config)->toBeInstanceOf(QuarterlyFrequencyConfig::class);
+            expect($schedule->frequency_config->days_of_month)->toBe([15]);
+            expect($schedule->frequency_config->start_month)->toBe(2);
+        });
+
+        it('can create semi-annual recurring schedule with correct start month', function () {
+            $user = createUser();
+
+            $schedule = Zap::for($user)
+                ->semiannually(['day_of_month' => 10])
+                ->from('2025-03-10')
+                ->to('2025-12-10')
+                ->addPeriod('08:00', '09:00')
+                ->save();
+
+            expect($schedule->is_recurring)->toBeTrue();
+            expect($schedule->frequency)->toBe(Frequency::SEMIANNUALLY);
+            expect($schedule->frequency_config)->toBeInstanceOf(SemiAnnuallyFrequencyConfig::class);
+            expect($schedule->frequency_config->days_of_month)->toBe([10]);
+            expect($schedule->frequency_config->start_month)->toBe(3);
+        });
+
+        it('can create annual recurring schedule with start month aligned', function () {
+            $user = createUser();
+
+            $schedule = Zap::for($user)
+                ->annually(['day_of_month' => 1])
+                ->from('2025-04-01')
+                ->to('2026-04-01')
+                ->addPeriod('15:00', '16:00')
+                ->save();
+
+            expect($schedule->is_recurring)->toBeTrue();
+            expect($schedule->frequency)->toBe(Frequency::ANNUALLY);
+            expect($schedule->frequency_config)->toBeInstanceOf(AnnuallyFrequencyConfig::class);
+            expect($schedule->frequency_config->days_of_month)->toBe([1]);
+            expect($schedule->frequency_config->start_month)->toBe(4);
         });
 
         it('can create custom recurring schedule', function () {
@@ -414,6 +511,60 @@ describe('Comprehensive Use Cases - All Features', function () {
             expect($schedule->is_recurring)->toBeTrue();
             expect($schedule->frequency)->toBe('custom');
             expect($schedule->frequency_config['pattern'])->toBe('every_2_weeks');
+        });
+
+        it('can create existing frequency in recurring method with string', function () {
+            $user = createUser();
+
+            $schedule = Zap::for($user)
+                ->recurring('weekly', ['days' => ['monday', 'tuesday']])
+                ->from('2025-01-01')
+                ->to('2025-12-31')
+                ->addPeriod('09:00', '13:00')
+                ->save();
+
+            expect($schedule->is_recurring)->toBeTrue();
+            expect($schedule->frequency)->toBe(Frequency::WEEKLY);
+            expect($schedule->frequency_config)->toBeInstanceOf(WeeklyFrequencyConfig::class);
+            expect($schedule->frequency_config->days)->toBe(['monday', 'tuesday']);
+
+            $schedule = Zap::for($user)
+                ->recurring('monthly', ['day_of_month' => 15])
+                ->from('2025-01-01')
+                ->to('2025-12-31')
+                ->addPeriod('14:00', '17:00')
+                ->save();
+
+            expect($schedule->is_recurring)->toBeTrue();
+            expect($schedule->frequency)->toBe(Frequency::MONTHLY);
+            expect($schedule->frequency_config)->toBeInstanceOf(MonthlyFrequencyConfig::class);
+            expect($schedule->frequency_config->days_of_month)->toBe([15]);
+        });
+
+        it('throws exception, when necessary config is not provided', function () {
+            $user = createUser();
+
+            expect(function () use ($user) {
+                $schedule = Zap::for($user)
+                    ->recurring('weekly', ['days_x' => ['monday', 'tuesday']])
+                    ->from('2025-01-01')
+                    ->to('2025-12-31')
+                    ->addPeriod('09:00', '17:00')
+                    ->save();
+            })->toThrow(InvalidArgumentException::class);
+        });
+
+        it('throws exception, when wrong config class is provided', function () {
+            $user = createUser();
+
+            expect(function () use ($user) {
+                $schedule = Zap::for($user)
+                    ->recurring('weekly', MonthlyFrequencyConfig::fromArray(['days_of_month' => [1, 15]]))
+                    ->from('2025-01-01')
+                    ->to('2025-12-31')
+                    ->addPeriod('09:00', '17:00')
+                    ->save();
+            })->toThrow(InvalidArgumentException::class);
         });
 
         it('handles recurring schedule across year boundaries', function () {

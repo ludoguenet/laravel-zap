@@ -347,4 +347,25 @@ describe('Overlap Rules Edge Cases', function () {
 
     });
 
+    it('detects overlaps for extended recurring frequencies', function () {
+        $user = createUser();
+
+        Zap::for($user)
+            ->from('2024-01-01')
+            ->to('2024-12-31')
+            ->addPeriod('09:00', '10:00')
+            ->biweekly(['monday'])
+            ->save();
+
+        expect(function () use ($user) {
+            Zap::for($user)
+                ->from('2024-01-15')
+                ->to('2024-12-31')
+                ->addPeriod('09:59', '11:00')
+                ->biweekly(['monday'])
+                ->noOverlap()
+                ->save();
+        })->toThrow(ScheduleConflictException::class);
+    });
+
 });
