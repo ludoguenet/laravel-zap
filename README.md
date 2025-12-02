@@ -113,6 +113,10 @@ $schedule->daily()->from('2025-01-01')->to('2025-12-31');
 // Weekly (specific days)
 $schedule->weekly(['monday', 'wednesday', 'friday'])->forYear(2025);
 
+// Weekly with time period (convenience method - combines weekly() and addPeriod())
+$schedule->weekDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')
+    ->forYear(2025);
+
 // Bi-weekly (week of the start date by default, optional anchor)
 $schedule->biweekly(['tuesday', 'thursday'])->from('2025-01-07')->to('2025-03-31');
 
@@ -213,10 +217,11 @@ $slots = $doctor->getBookableSlots('2025-01-15', 60, 15);
 ### 🏢 Meeting Room Booking
 
 ```php
-// Room availability
+// Room availability (using weekDays convenience method)
 Zap::for($room)->named('Conference Room A')->availability()
-    ->forYear(2025)->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
-    ->addPeriod('08:00', '18:00')->save();
+    ->weekDays(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], '08:00', '18:00')
+    ->forYear(2025)
+    ->save();
 
 // Book meeting
 Zap::for($room)->named('Board Meeting')->appointment()
@@ -227,10 +232,11 @@ Zap::for($room)->named('Board Meeting')->appointment()
 ### 👔 Employee Shift Management
 
 ```php
-// Regular schedule
+// Regular schedule (using weekDays convenience method)
 Zap::for($employee)->named('Regular Shift')->availability()
-    ->forYear(2025)->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
-    ->addPeriod('09:00', '17:00')->save();
+    ->weekDays(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], '09:00', '17:00')
+    ->forYear(2025)
+    ->save();
 
 // Vacation
 Zap::for($employee)->named('Vacation Leave')->blocked()

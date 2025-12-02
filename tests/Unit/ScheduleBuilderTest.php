@@ -75,6 +75,18 @@ describe('ScheduleBuilder', function () {
         expect($weekly['attributes']['frequency'])->toBe(Frequency::WEEKLY);
         expect($weekly['attributes']['frequency_config']->toArray())->toBe(['days' => ['monday', 'friday']]);
 
+        // Test weekDays (convenience method that combines weekly and addPeriod)
+        $builder->reset();
+        $weekDays = $builder->for($user)->from('2025-01-01')->weekDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->build();
+        expect($weekDays['attributes']['frequency'])->toBe(Frequency::WEEKLY);
+        expect($weekDays['attributes']['frequency_config']->toArray())->toBe(['days' => ['monday', 'wednesday', 'friday']]);
+        expect($weekDays['periods'])->toHaveCount(1);
+        expect($weekDays['periods'][0])->toMatchArray([
+            'start_time' => '09:00',
+            'end_time' => '17:00',
+            'date' => '2025-01-01',
+        ]);
+
         // Test monthly
         $builder->reset();
         $monthly = $builder->for($user)->from('2025-01-01')->monthly(['day_of_month' => 15])->build();

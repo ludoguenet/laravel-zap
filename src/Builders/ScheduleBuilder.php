@@ -168,6 +168,22 @@ class ScheduleBuilder
     }
 
     /**
+     * Set schedule as weekly recurring and add a time period.
+     */
+    public function weekDays(array $days, string $startTime, string $endTime): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::WEEKLY;
+        $this->attributes['frequency_config'] = WeeklyFrequencyConfig::fromArray([
+            'days' => $days,
+        ]);
+
+        $this->addPeriod($startTime, $endTime, null);
+
+        return $this;
+    }
+
+    /**
      * Set schedule as bi-weekly recurring.
      */
     public function biweekly(array $days = [], CarbonInterface|string|null $startsOn = null): self
