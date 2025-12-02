@@ -34,6 +34,15 @@ use Zap\Enums\ScheduleTypes;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, SchedulePeriod> $periods
  * @property-read Model $schedulable
  * @property-read int $total_duration
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder active(bool $active = true)
+ * @method static \Illuminate\Database\Eloquent\Builder recurring(bool $recurring = true)
+ * @method static \Illuminate\Database\Eloquent\Builder ofType(ScheduleTypes|string $type)
+ * @method static \Illuminate\Database\Eloquent\Builder availability()
+ * @method static \Illuminate\Database\Eloquent\Builder appointments()
+ * @method static \Illuminate\Database\Eloquent\Builder blocked()
+ * @method static \Illuminate\Database\Eloquent\Builder forDate(string $date)
+ * @method static \Illuminate\Database\Eloquent\Builder forDateRange(string $startDate, string $endDate)
  */
 class Schedule extends Model
 {
