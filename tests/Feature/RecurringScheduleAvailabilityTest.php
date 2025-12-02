@@ -387,4 +387,34 @@ describe('Recurring Schedule Availability', function () {
         expect($isAvailable)->toBeTrue();
     });
 
+    it('handles extended recurring frequencies correctly', function () {
+        $user = createUser();
+
+        // Bi-monthly on 5th and 20th
+        Zap::for($user)
+            ->named('Bi-Monthly Review')
+            ->from('2025-01-05')
+            ->to('2025-03-31')
+            ->addPeriod('10:00', '12:00')
+            ->bimonthly(['days_of_month' => [5, 20]])
+            ->save();
+
+        // Quarterly on 15th starting February
+        Zap::for($user)
+            ->named('Quarterly Check')
+            ->from('2025-02-15')
+            ->to('2025-11-15')
+            ->addPeriod('14:00', '16:00')
+            ->quarterly(['day_of_month' => 15])
+            ->save();
+
+        expect($user->isAvailableAt('2025-01-05', '10:00', '11:00'))->toBeFalse();
+        expect($user->isAvailableAt('2025-01-20', '10:00', '11:00'))->toBeFalse();
+        expect($user->isAvailableAt('2025-01-10', '10:00', '11:00'))->toBeTrue();
+
+        expect($user->isAvailableAt('2025-02-15', '14:00', '15:00'))->toBeFalse();
+        expect($user->isAvailableAt('2025-05-15', '14:00', '15:00'))->toBeFalse();
+        expect($user->isAvailableAt('2025-03-15', '14:00', '15:00'))->toBeTrue();
+    });
+
 });

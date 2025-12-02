@@ -1,6 +1,20 @@
 <?php
 
+use Carbon\CarbonInterface;
+
 return [
+    /*
+    |--------------------------------------------------------------------------
+    | Calendar Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Settings related to calendar display and behavior.
+    |
+    */
+    'calendar' => [
+        'week_start' => CarbonInterface::MONDAY,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Default Schedule Rules

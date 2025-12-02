@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Zap\Builders\ScheduleBuilder;
+use Zap\Data\FrequencyConfig;
+use Zap\Enums\Frequency;
 use Zap\Events\ScheduleCreated;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Models\Schedule;
@@ -15,7 +17,8 @@ class ScheduleService
     public function __construct(
         private ValidationService $validator,
         private ConflictDetectionService $conflictService
-    ) {}
+    ) {
+    }
 
     /**
      * Create a new schedule with validation and conflict detection.
@@ -108,7 +111,7 @@ class ScheduleService
      */
     public function for(Model $schedulable): ScheduleBuilder
     {
-        return (new ScheduleBuilder)->for($schedulable);
+        return (new ScheduleBuilder())->for($schedulable);
     }
 
     /**
@@ -116,7 +119,7 @@ class ScheduleService
      */
     public function schedule(): ScheduleBuilder
     {
-        return new ScheduleBuilder;
+        return new ScheduleBuilder();
     }
 
     /**
@@ -200,7 +203,7 @@ class ScheduleService
             return $schedulable->schedulesForDateRange($startDate, $endDate)->get();
         }
 
-        return new \Illuminate\Database\Eloquent\Collection;
+        return new \Illuminate\Database\Eloquent\Collection();
     }
 
     /**
@@ -241,23 +244,11 @@ class ScheduleService
         $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
 
-        switch ($frequency) {
-            case 'daily':
-                return true;
-
-            case 'weekly':
-                $allowedDays = $config['days'] ?? [];
-
-                return empty($allowedDays) || in_array(strtolower($date->format('l')), $allowedDays);
-
-            case 'monthly':
-                $dayOfMonth = $config['day_of_month'] ?? $date->day;
-
-                return $date->day === $dayOfMonth;
-
-            default:
-                return false;
+        if (! ($config instanceof FrequencyConfig)) {
+            return false;
         }
+
+        return $config->shouldCreateInstance($date);
     }
 
     /**
@@ -267,11 +258,10 @@ class ScheduleService
     {
         $frequency = $schedule->frequency;
 
-        return match ($frequency) {
-            'daily' => $current->copy()->addDay(),
-            'weekly' => $current->copy()->addWeek(),
-            'monthly' => $current->copy()->addMonth(),
-            default => $current->copy()->addDay(),
-        };
+        if ($frequency instanceof Frequency) {
+            return $frequency->getNextRecurrence($current);
+        }
+
+        return $current->copy()->addDay();
     }
 }

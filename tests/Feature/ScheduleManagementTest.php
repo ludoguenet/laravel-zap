@@ -1,5 +1,6 @@
 <?php
 
+use Zap\Enums\Frequency;
 use Zap\Exceptions\InvalidScheduleException;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
@@ -32,8 +33,8 @@ it('can create recurring weekly schedule', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('weekly');
-    expect($schedule->frequency_config)->toBe(['days' => ['monday', 'wednesday', 'friday']]);
+    expect($schedule->frequency)->toBe(Frequency::WEEKLY);
+    expect($schedule->frequency_config->toArray())->toBe(['days' => ['monday', 'wednesday', 'friday']]);
 });
 
 it('detects schedule conflicts', function () {
@@ -187,7 +188,7 @@ it('can create complex recurring schedule', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('weekly');
+    expect($schedule->frequency)->toBe(Frequency::WEEKLY);
     expect($schedule->periods)->toHaveCount(2);
     expect($schedule->description)->toBe('Available for consultations');
 });
@@ -258,8 +259,58 @@ it('can handle monthly recurring schedules', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('monthly');
-    expect($schedule->frequency_config)->toBe(['day_of_month' => 1]);
+    expect($schedule->frequency)->toBe(Frequency::MONTHLY);
+    expect($schedule->frequency_config->toArray())->toBe(['days_of_month' => [1]]);
+});
+
+it('can create schedules with extended recurring frequencies', function () {
+    $user = createUser();
+
+    $biweekly = Zap::for($user)
+        ->named('Bi-Weekly Check-in')
+        ->from('2025-01-06')
+        ->to('2025-02-28')
+        ->addPeriod('09:00', '10:00')
+        ->biweekly(['monday'])
+        ->save();
+
+    $bimonthly = Zap::for($user)
+        ->named('Bi-Monthly Review')
+        ->from('2025-01-05')
+        ->to('2025-03-31')
+        ->addPeriod('11:00', '12:00')
+        ->bimonthly(['days_of_month' => [5, 20], 'start_month' => 1])
+        ->save();
+
+    $quarterly = Zap::for($user)
+        ->named('Quarterly Meeting')
+        ->from('2025-02-15')
+        ->to('2025-11-15')
+        ->addPeriod('13:00', '14:00')
+        ->quarterly(['day_of_month' => 15, 'start_month' => 2])
+        ->save();
+
+    $semiannually = Zap::for($user)
+        ->named('Semi-Annually Meeting')
+        ->from('2025-03-30')
+        ->to('2025-11-15')
+        ->addPeriod('13:00', '14:00')
+        ->semiannually(['day_of_month' => 20, 'start_month' => 2])
+        ->save();
+
+    $annually = Zap::for($user)
+        ->named('Annually Meeting')
+        ->from('2025-04-05')
+        ->to('2026-11-15')
+        ->addPeriod('13:00', '14:00')
+        ->annually(['day_of_month' => 20, 'start_month' => 2])
+        ->save();
+
+    expect($biweekly->frequency)->toBe(Frequency::BIWEEKLY);
+    expect($bimonthly->frequency)->toBe(Frequency::BIMONTHLY);
+    expect($quarterly->frequency)->toBe(Frequency::QUARTERLY);
+    expect($semiannually->frequency)->toBe(Frequency::SEMIANNUALLY);
+    expect($annually->frequency)->toBe(Frequency::ANNUALLY);
 });
 
 it('validates maximum duration rule', function () {
