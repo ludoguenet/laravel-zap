@@ -11,8 +11,7 @@ class WeeklyFrequencyConfig extends FrequencyConfig
 {
     public function __construct(
         public array $days = []
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

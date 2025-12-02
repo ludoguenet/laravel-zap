@@ -14,7 +14,7 @@ describe('ScheduleBuilder', function () {
     it('can build schedule attributes correctly', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $built = $builder
             ->for($user)
             ->named('Test Meeting')
@@ -43,7 +43,7 @@ describe('ScheduleBuilder', function () {
     it('can add multiple periods', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $built = $builder
             ->for($user)
             ->from('2025-01-01')
@@ -63,7 +63,7 @@ describe('ScheduleBuilder', function () {
     it('can set different recurring frequencies', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
 
         // Test daily
         $daily = $builder->for($user)->from('2025-01-01')->daily()->build();
@@ -124,7 +124,7 @@ describe('ScheduleBuilder', function () {
 
     it('respects custom anchors for recurring frequencies', function () {
         $user = createUser();
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
 
         // Bi-weekly with explicit startsOn (should not be overridden by from())
         $biweekly = $builder
@@ -185,7 +185,7 @@ describe('ScheduleBuilder', function () {
     it('can add validation rules', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $built = $builder
             ->for($user)
             ->from('2025-01-01')
@@ -209,7 +209,7 @@ describe('ScheduleBuilder', function () {
     it('can handle metadata', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $built = $builder
             ->for($user)
             ->from('2025-01-01')
@@ -226,7 +226,7 @@ describe('ScheduleBuilder', function () {
     it('can set active/inactive status', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
 
         // Test active (default)
         $active = $builder->for($user)->from('2025-01-01')->active()->build();
@@ -241,7 +241,7 @@ describe('ScheduleBuilder', function () {
     it('can clone builder with same configuration', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $builder
             ->for($user)
             ->named('Original')
@@ -262,7 +262,7 @@ describe('ScheduleBuilder', function () {
     });
 
     it('validates required fields', function () {
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
 
         // Missing schedulable
         expect(fn () => $builder->from('2025-01-01')->build())
@@ -278,7 +278,7 @@ describe('ScheduleBuilder', function () {
     it('can use between method for date range', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $built = $builder
             ->for($user)
             ->between('2025-01-01', '2025-12-31')
@@ -291,7 +291,7 @@ describe('ScheduleBuilder', function () {
     it('can use forYear method to set date range for a year', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $built = $builder
             ->for($user)
             ->forYear(2025)
@@ -304,7 +304,7 @@ describe('ScheduleBuilder', function () {
     it('can use forYear with different years', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
 
         // Test with 2024
         $built2024 = $builder
@@ -329,7 +329,7 @@ describe('ScheduleBuilder', function () {
     it('can chain forYear with other methods', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $built = $builder
             ->for($user)
             ->named('Yearly Schedule')
@@ -349,7 +349,7 @@ describe('ScheduleBuilder', function () {
     it('provides getter methods for current state', function () {
         $user = createUser();
 
-        $builder = new ScheduleBuilder();
+        $builder = new ScheduleBuilder;
         $builder
             ->for($user)
             ->named('Test')
@@ -369,7 +369,7 @@ describe('ScheduleBuilder Integration', function () {
     it('integrates with ScheduleService for saving', function () {
         $user = createUser();
 
-        $schedule = (new ScheduleBuilder())
+        $schedule = (new ScheduleBuilder)
             ->for($user)
             ->named('Integration Test')
             ->from('2025-01-01')
@@ -383,7 +383,7 @@ describe('ScheduleBuilder Integration', function () {
     it('can save schedule using forYear method', function () {
         $user = createUser();
 
-        $schedule = (new ScheduleBuilder())
+        $schedule = (new ScheduleBuilder)
             ->for($user)
             ->named('Yearly Integration Test')
             ->forYear(2025)

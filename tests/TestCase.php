@@ -79,9 +79,9 @@ abstract class TestCase extends Orchestra
     protected function defineDatabaseMigrations(): void
     {
         include_once __DIR__.'/database/migrations/2025_11_23_create_zap_test_users_table.php';
-        (new \CreateUsersTable())->up();
+        (new \CreateUsersTable)->up();
         include_once __DIR__.'/database/migrations/2025_11_23_create_zap_test_rooms_table.php';
-        (new \CreateRoomsTable())->up();
+        (new \CreateRoomsTable)->up();
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }

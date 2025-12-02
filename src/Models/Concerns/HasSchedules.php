@@ -115,7 +115,7 @@ trait HasSchedules
      */
     public function createSchedule(): ScheduleBuilder
     {
-        return (new ScheduleBuilder())->for($this);
+        return (new ScheduleBuilder)->for($this);
     }
 
     /**

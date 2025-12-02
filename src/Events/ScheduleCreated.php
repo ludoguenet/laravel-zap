@@ -17,8 +17,7 @@ class ScheduleCreated
      */
     public function __construct(
         public Schedule $schedule
-    ) {
-    }
+    ) {}
 
     /**
      * Get the schedule that was created.

@@ -11,8 +11,7 @@ class MonthlyFrequencyConfig extends FrequencyConfig
 {
     public function __construct(
         public ?array $days_of_month
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

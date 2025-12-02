@@ -13,8 +13,7 @@ class SemiAnnuallyFrequencyConfig extends FrequencyConfig
     public function __construct(
         public ?array $days_of_month = [],
         public ?int $start_month = null,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

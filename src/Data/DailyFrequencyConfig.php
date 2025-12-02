@@ -8,7 +8,7 @@ class DailyFrequencyConfig extends FrequencyConfig
 {
     public static function fromArray(array $data): \Zap\Data\FrequencyConfig
     {
-        return new self();
+        return new self;
     }
 
     public function getNextRecurrence(\Carbon\CarbonInterface $current): \Carbon\CarbonInterface

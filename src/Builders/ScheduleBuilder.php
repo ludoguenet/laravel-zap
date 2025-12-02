@@ -148,7 +148,7 @@ class ScheduleBuilder
     {
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = Frequency::DAILY;
-        $this->attributes['frequency_config'] = new DailyFrequencyConfig();
+        $this->attributes['frequency_config'] = new DailyFrequencyConfig;
 
         return $this;
     }
@@ -494,7 +494,7 @@ class ScheduleBuilder
      */
     public function clone(): self
     {
-        $clone = new self();
+        $clone = new self;
         $clone->schedulable = $this->schedulable;
         $clone->attributes = $this->attributes;
         $clone->periods = $this->periods;
