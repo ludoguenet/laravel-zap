@@ -30,6 +30,8 @@ class ZapServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        require_once __DIR__.'/helpers.php';
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         if ($this->app->runningInConsole()) {

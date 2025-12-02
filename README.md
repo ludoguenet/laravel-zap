@@ -98,6 +98,8 @@ $slots = $doctor->getBookableSlots('2025-01-15', 60, 15);
 $nextSlot = $doctor->getNextBookableSlot('2025-01-15', 60, 15);
 ```
 
+> 💡 **Tip:** You can also use the `zap()` helper function instead of the facade: `zap()->for($doctor)->...` (no import needed)
+
 ---
 
 ## 📅 Schedule Patterns
