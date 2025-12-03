@@ -188,6 +188,7 @@ class ScheduleService
     }
 
     /**
+     * unused
      * Generate recurring schedule instances for a given period.
      */
     public function generateRecurringInstances(
@@ -218,6 +219,7 @@ class ScheduleService
     }
 
     /**
+     * unused
      * Check if a recurring instance should be created for the given date.
      */
     private function shouldCreateInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
@@ -245,6 +247,7 @@ class ScheduleService
     }
 
     /**
+     * unused
      * Get the next recurrence date.
      */
     private function getNextRecurrence(Schedule $schedule, \Carbon\CarbonInterface $current): \Carbon\CarbonInterface
