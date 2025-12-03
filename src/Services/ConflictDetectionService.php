@@ -2,9 +2,11 @@
 
 namespace Zap\Services;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Zap\Enums\ScheduleTypes;
+use Zap\Helper\DateHelper;
 use Zap\Models\Schedule;
 use Zap\Models\SchedulePeriod;
 
@@ -257,7 +259,7 @@ class ConflictDetectionService
     /**
      * Check if a recurring instance should be created for the given date.
      */
-    protected function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    public function shouldCreateRecurringInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
     {
         $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
@@ -268,19 +270,23 @@ class ConflictDetectionService
 
             case 'weekly':
                 $allowedDays = $config['days'] ?? ['monday'];
-                $allowedDayNumbers = array_map(function ($day) {
-                    return match (strtolower($day)) {
-                        'sunday' => 0,
-                        'monday' => 1,
-                        'tuesday' => 2,
-                        'wednesday' => 3,
-                        'thursday' => 4,
-                        'friday' => 5,
-                        'saturday' => 6,
-                        default => 1, // Default to Monday
-                    };
-                }, $allowedDays);
+                $allowedDayNumbers = DateHelper::getDayNumbers($allowedDays);
+                return in_array($date->dayOfWeek, $allowedDayNumbers);
 
+            case 'weekly_odd':
+            case 'weekly_even':
+                $allowedDays = $config['days'] ?? ['monday'];
+                $allowedDayNumbers = DateHelper::getDayNumbers($allowedDays);
+                $isDateInEvenIsoWeek = DateHelper::isDateInEvenIsoWeek($date);
+
+                // Reject the date if it doesn't match the expected week type (odd/even).
+                //If we the schedule is for weekly_odd then we need a odd week
+                if (
+                    ($schedule->frequency === 'weekly_odd' && $isDateInEvenIsoWeek) ||
+                    ($schedule->frequency === 'weekly_even' && !$isDateInEvenIsoWeek)
+                ) {
+                    return false;
+                }
                 return in_array($date->dayOfWeek, $allowedDayNumbers);
 
             case 'monthly':
@@ -309,6 +315,11 @@ class ConflictDetectionService
                 $allowedDays = $config['days'] ?? ['monday'];
 
                 return $this->getNextWeeklyOccurrence($current, $allowedDays);
+
+            case 'weekly_even':
+            case 'weekly_odd':
+                $allowedDays = $config['days'] ?? ['monday'];
+                return $this->getNextWeeklyEvenOddOccurrence($current, $allowedDays, $frequency);
 
             case 'monthly':
                 $dayOfMonth = $config['day_of_month'] ?? $current->day;
@@ -347,6 +358,41 @@ class ConflictDetectionService
 
             // Prevent infinite loop
             if ($next->diffInDays($current) > 7) {
+                break;
+            }
+        }
+
+        return $next;
+    }
+
+    /**
+     * Get the next weekly even or odd occurrence for the given days.
+     */
+    protected function getNextWeeklyEvenOddOccurrence(\Carbon\CarbonInterface $current, array $allowedDays, string $frequency): \Carbon\CarbonInterface
+    {
+        $next = $current->copy()->addDay();
+
+        // Convert day names to numbers (0 = Sunday, 1 = Monday, etc.)
+        $allowedDayNumbers = DateHelper::getDayNumbers($allowedDays);
+
+        // Find the next allowed day
+        while (true) {
+            $isDateInEvenIsoWeek = DateHelper::isDateInEvenIsoWeek($next);
+
+            $matchesWeekType = match ($frequency) {
+                'weekly_odd' => !$isDateInEvenIsoWeek,
+                'weekly_even' => $isDateInEvenIsoWeek,
+                default => true,
+            };
+
+            if (in_array($next->dayOfWeek, $allowedDayNumbers) && $matchesWeekType) {
+                break;
+            }
+
+            $next = $next->addDay();
+
+            // Safety: stop infinite loop after 14 days
+            if ($next->diffInDays($current) > 14) {
                 break;
             }
         }

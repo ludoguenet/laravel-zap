@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
 use Zap\Enums\ScheduleTypes;
+use Zap\Helper\DateHelper;
 use Zap\Models\Schedule;
 use Zap\Services\ConflictDetectionService;
 
@@ -218,38 +219,7 @@ trait HasSchedules
      */
     protected function shouldCreateRecurringInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
     {
-        $frequency = $schedule->frequency;
-        $config = $schedule->frequency_config ?? [];
-
-        switch ($frequency) {
-            case 'daily':
-                return true;
-
-            case 'weekly':
-                $allowedDays = $config['days'] ?? ['monday'];
-                $allowedDayNumbers = array_map(function ($day) {
-                    return match (strtolower($day)) {
-                        'sunday' => 0,
-                        'monday' => 1,
-                        'tuesday' => 2,
-                        'wednesday' => 3,
-                        'thursday' => 4,
-                        'friday' => 5,
-                        'saturday' => 6,
-                        default => 1, // Default to Monday
-                    };
-                }, $allowedDays);
-
-                return in_array($date->dayOfWeek, $allowedDayNumbers);
-
-            case 'monthly':
-                $dayOfMonth = $config['day_of_month'] ?? $schedule->start_date->day;
-
-                return $date->day === $dayOfMonth;
-
-            default:
-                return false;
-        }
+        return app(ConflictDetectionService::class)->shouldCreateRecurringInstance($schedule, $date);
     }
 
     /**

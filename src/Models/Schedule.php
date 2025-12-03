@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Zap\Enums\ScheduleTypes;
+use Zap\Helper\DateHelper;
 
 /**
  * @property int $id
@@ -162,6 +163,7 @@ class Schedule extends Model
         $checkDate = Carbon::parse($date);
         $weekday = strtolower($checkDate->format('l')); // monday, tuesday, ...
         $dayOfMonth = $checkDate->day;
+        $isDateInEvenIsoWeek = DateHelper::isDateInEvenIsoWeek($date);
 
         $query
             // date range
@@ -172,7 +174,7 @@ class Schedule extends Model
             })
 
             // recurrence logic
-            ->where(function ($q) use ($weekday, $dayOfMonth) {
+            ->where(function ($q) use ($weekday, $dayOfMonth, $isDateInEvenIsoWeek) {
 
                 //
                 // 1️⃣ NOT RECURRING — always match
@@ -194,7 +196,14 @@ class Schedule extends Model
                         $weekly->where('is_recurring', true)
                             ->where('frequency', 'weekly')
                             ->whereJsonContains('frequency_config->days', $weekday);
+                })
+                    // weekly_even or weekly_odd
+                    ->orWhere(function ($query) use ($weekday, $isDateInEvenIsoWeek) {
+                        $query->where('is_recurring', true)
+                            ->where('frequency', $isDateInEvenIsoWeek ? 'weekly_even' : 'weekly_odd')
+                            ->whereJsonContains('frequency_config->days', $weekday);
                     })
+
 
                 //
                 // 4️⃣ MONTHLY — match day_of_month from config

@@ -143,15 +143,27 @@ class ScheduleBuilder
     }
 
     /**
-     * Set schedule as weekly recurring.
+     * Set weekly frequency configuration.
      */
-    public function weekly(array $days = []): self
+    private function setWeeklyFrequency(string $frequency, array $days = []): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'weekly';
+        $this->attributes['frequency'] = $frequency;
         $this->attributes['frequency_config'] = ['days' => $days];
-
         return $this;
+    }
+
+    public function weekly(array $days = []): self
+    {
+        return $this->setWeeklyFrequency('weekly', $days);
+    }
+    public function weeklyOdd(array $days = []): self
+    {
+        return $this->setWeeklyFrequency('weekly_odd', $days);
+    }
+    public function weeklyEven(array $days = []): self
+    {
+        return $this->setWeeklyFrequency('weekly_even', $days);
     }
 
     /**
@@ -194,6 +206,14 @@ class ScheduleBuilder
     public function noOverlap(): self
     {
         return $this->withRule('no_overlap');
+    }
+
+    /**
+     * Add allow overlap rule.
+     */
+    public function allowOverlap(): self
+    {
+        return $this->withRule('no_overlap', ['enabled' => false]);
     }
 
     /**
