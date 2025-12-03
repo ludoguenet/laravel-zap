@@ -161,6 +161,16 @@ $custom = Zap::for($user)
     ->save();
 ```
 
+```php
+$custom = Zap::for($user)
+    ->named('Custom Event')
+    ->custom()
+    ->from('2025-01-15')
+    ->addPeriod('15:00', '16:00')
+    ->allowOverlap() // Explicitly allow overlaps
+    ->save();
+```
+
 ### Query by Type
 ```php
 // Query schedules by type
