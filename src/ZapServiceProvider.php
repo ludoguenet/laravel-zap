@@ -32,8 +32,6 @@ class ZapServiceProvider extends ServiceProvider
     {
         require_once __DIR__.'/helpers.php';
 
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/zap.php' => config_path('zap.php'),
