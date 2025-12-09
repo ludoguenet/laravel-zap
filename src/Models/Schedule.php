@@ -216,6 +216,12 @@ class Schedule extends Model
                         $query->where('is_recurring', true)
                             ->where('frequency', $isDateInEvenIsoWeek ? 'weekly_even' : 'weekly_odd')
                             ->whereJsonContains('frequency_config->days', $weekday);
+                })
+                    // weekly_even or weekly_odd
+                    ->orWhere(function ($query) use ($weekday, $isDateInEvenIsoWeek) {
+                        $query->where('is_recurring', true)
+                            ->where('frequency', $isDateInEvenIsoWeek ? 'weekly_even' : 'weekly_odd')
+                            ->whereJsonContains('frequency_config->days', $weekday);
                     })
 
 
