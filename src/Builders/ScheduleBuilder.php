@@ -312,6 +312,14 @@ class ScheduleBuilder
     }
 
     /**
+     * Add allow overlap rule.
+     */
+    public function allowOverlap(): self
+    {
+        return $this->withRule('no_overlap', ['enabled' => false]);
+    }
+
+    /**
      * Set schedule as availability type (allows overlaps).
      */
     public function availability(): self
