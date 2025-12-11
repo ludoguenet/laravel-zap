@@ -70,7 +70,6 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
         // This should conflict
         expect(function () use ($user) {
             Zap::for($user)
-                ->named('Non-Odd Week Appointment')
                 ->appointment()
                 ->from('2025-01-01')
                 ->addPeriod('09:00', '10:30')

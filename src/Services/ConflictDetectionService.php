@@ -320,41 +320,6 @@ class ConflictDetectionService
     }
 
     /**
-     * Get the next weekly even or odd occurrence for the given days.
-     */
-    protected function getNextWeeklyEvenOddOccurrence(\Carbon\CarbonInterface $current, array $allowedDays, string $frequency): \Carbon\CarbonInterface
-    {
-        $next = $current->copy()->addDay();
-
-        // Convert day names to numbers (0 = Sunday, 1 = Monday, etc.)
-        $allowedDayNumbers = DateHelper::getDayNumbers($allowedDays);
-
-        // Find the next allowed day
-        while (true) {
-            $isDateInEvenIsoWeek = DateHelper::isDateInEvenIsoWeek($next);
-
-            $matchesWeekType = match ($frequency) {
-                'weekly_odd' => !$isDateInEvenIsoWeek,
-                'weekly_even' => $isDateInEvenIsoWeek,
-                default => true,
-            };
-
-            if (in_array($next->dayOfWeek, $allowedDayNumbers) && $matchesWeekType) {
-                break;
-            }
-
-            $next = $next->addDay();
-
-            // Safety: stop infinite loop after 14 days
-            if ($next->diffInDays($current) > 14) {
-                break;
-            }
-        }
-
-        return $next;
-    }
-
-    /**
      * Get other active schedules for the same schedulable.
      */
     protected function getOtherSchedules(Schedule $schedule): Collection

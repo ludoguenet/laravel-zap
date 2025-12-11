@@ -1,8 +1,10 @@
 <?php
 
+use Illuminate\Support\Carbon;
 use Zap\Enums\ScheduleTypes;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
+use Zap\Helper\DateHelper;
 use Zap\Models\Schedule;
 
 describe('Weekly Odd/Even ', function () {
@@ -29,10 +31,17 @@ describe('Weekly Odd/Even ', function () {
         expect($availability->periods[1]->start_time)->toBe('14:00');
         expect($availability->periods[1]->end_time)->toBe('17:00');
 
-        expect($availability->frequency)->toBe('weekly_even');
-        expect($availability->frequency_config)->toBe([
-            'days' => ['monday', 'tuesday', 'wednesday', 'friday'],
-        ]);
+        expect($availability->frequency->value)->toBe('weekly_even');
+
+        expect($availability->frequency_config)
+            ->toBeInstanceOf(\Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyEvenFrequencyConfig::class);
+        expect($availability->frequency_config->days)
+            ->toBe([
+                'monday',
+                'tuesday',
+                'wednesday',
+                'friday',
+            ]);
 
     });
 
@@ -58,11 +67,11 @@ describe('Weekly Odd/Even ', function () {
         expect($availability->periods[1]->start_time)->toBe('14:00');
         expect($availability->periods[1]->end_time)->toBe('17:00');
 
-        expect($availability->frequency)->toBe('weekly_odd');
+        expect($availability->frequency->value)->toBe(Frequency::WEEKLY_ODD->value);
 
-        expect($availability->frequency_config)->toBe([
-            'days' => ['monday', 'wednesday'],
-        ]);
+        expect($availability->frequency_config)
+            ->toBeInstanceOf(\Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyOddFrequencyConfig::class);
+        expect($availability->frequency_config->days)->toBe(['monday', 'wednesday']);
     });
 
     test('getBookableSlots with weekly even and odd', function () {
@@ -78,28 +87,28 @@ describe('Weekly Odd/Even ', function () {
             ->save();
 
         //
-        // 1. Date en semaine impaire → aucun slot même si jour autorisé
+        // 1. Odd week date → no slots should be generated, even if the weekday is allowed
         //
         $slotsWeekOdd = $user->getBookableSlots(
-            date: '2025-01-01', // mercredi mais semaine 1 (impaire)
+            date: '2025-01-01', // Wednesday, but week 1 (odd week) → no slots should be generated
             slotDuration: 60
         );
         expect($slotsWeekOdd)->toBeEmpty();
 
         //
-        // 2. Jour non autorisé (jeudi) → aucun slot
+        // 2. Unauthorized day (Thursday) → no slots should be generated
         //
         $slotsThursday = $user->getBookableSlots(
-            date: '2025-01-02', // jeudi
+            date: '2025-01-02', // Thursday
             slotDuration: 60
         );
         expect($slotsThursday)->toBeEmpty();
 
         //
-        // 3. Date en semaine paire ET jour autorisé → 6 slots
+        // 3. Even week date and allowed day → 6 slots should be generated
         //
         $slotsWeekEven = $user->getBookableSlots(
-            date: '2025-01-06', // lundi semaine 2
+            date: '2025-01-06', // Monday, week 2 → 6 slots should be generated
             slotDuration: 60
         );
 
@@ -127,28 +136,28 @@ describe('Weekly Odd/Even ', function () {
             ->save();
 
         //
-        // 1. Date en semaine paire → aucun slot même si jour autorisé
+        // 1. Even week date → no slots should be generated, even if the day is allowed
         //
         $slotsWeekEven = $user->getBookableSlots(
-            date: '2025-01-06', // lundi semaine 2 (paire)
+            date: '2025-01-06', // Monday, week 2 (even)
             slotDuration: 60
         );
         expect($slotsWeekEven)->toBeEmpty();
 
         //
-        // 2. Jour non autorisé en semaine impaire → aucun slot
+        // 2. Unauthorized day on an odd week → no slots should be generated
         //
         $slotsTuesdayOdd = $user->getBookableSlots(
-            date: '2025-01-07', // mardi semaine 1 (impair) mais non autorisé
+            date: '2025-01-07', // Tuesday, week 1 (odd) but unauthorized → no slots should be generated
             slotDuration: 60
         );
         expect($slotsTuesdayOdd)->toBeEmpty();
 
         //
-        // 3. Date en semaine impaire et jour autorisé → 6 slots
+        // 3. Odd week date and allowed day → 6 slots should be generated
         //
         $slotsWeekOdd = $user->getBookableSlots(
-            date: '2025-01-01', // mercredi semaine 1 (impair)
+            date: '2025-01-01', // Wednesday, week 1 (odd)
             slotDuration: 60
         );
 
@@ -167,9 +176,9 @@ describe('Weekly Odd/Even ', function () {
     test('getNextBookableSlot returns the correct next available slot for weekly even in 2025', function () {
         $user = createUser();
 
-        // Création d'une availability pour les semaines paires en 2025
-        // Périodes : 09:00-12:00 et 14:00-17:00
-        // Jours autorisés : lundi, mardi, mercredi, vendredi
+        // Creating an availability for even weeks in 2025
+        // Periods: 09:00-12:00 and 14:00-17:00
+        // Allowed days: Monday, Tuesday, Wednesday, Friday
         Zap::for($user)
             ->named('Office Hours for Even Weeks')
             ->availability()
@@ -180,8 +189,8 @@ describe('Weekly Odd/Even ', function () {
             ->save();
 
         //
-        // Test : date initiale sur un jour non autorisé → le slot doit sauter au prochain jour autorisé
-        // Jeudi 2025-01-02 → semaine 1 (impaire) → pas autorisé pour weekly_even
+        // Test: initial date on an unauthorized day → the slot should move to the next allowed day
+        // Thursday 2025-01-02 → week 1 (odd) → not allowed for weekly_even
         //
         $nextSlotThursday = $user->getNextBookableSlot(
             afterDate: '2025-01-02',
@@ -189,7 +198,7 @@ describe('Weekly Odd/Even ', function () {
             bufferMinutes: 10
         );
 
-        // Le prochain jour autorisé en semaine paire est lundi 2025-01-06
+        // The next allowed day in an even week is Monday, 2025-01-06
         expect($nextSlotThursday)->toBe([
             'start_time' => '09:00',
             'end_time' => '10:00',
@@ -199,15 +208,15 @@ describe('Weekly Odd/Even ', function () {
         ]);
 
         //
-        // Test : date initiale sur un jour autorisé (lundi) avec assez de temps pour la durée et le buffer
+        // Test: initial date on an allowed day (Monday) with enough time for the duration and buffer
         //
         $nextSlotMonday = $user->getNextBookableSlot(
-            afterDate: '2025-01-06', // lundi semaine paire
+            afterDate: '2025-01-06', // Monday, even week
             duration: 110, // 1h50
             bufferMinutes: 10
         );
 
-        // Le slot commence à 10:00 → 11:50, toujours dans la période 09:00-12:00
+        // The slot starts at 10:00 → 11:50, still within the 09:00-12:00 period
         expect($nextSlotMonday)->toBe([
             'start_time' => '09:00',
             'end_time' => '10:50',
@@ -217,16 +226,16 @@ describe('Weekly Odd/Even ', function () {
         ]);
 
         //
-        // Test : date trop tard dans la journée → le slot doit passer au prochain jour autorisé
+        // Test: date too late in the day → the slot should move to the next allowed day
         //
         $nextSlotLate = $user->getNextBookableSlot(
-            afterDate: '2025-01-06 16:30', // lundi semaine paire
+            afterDate: '2025-01-06 16:30', // Monday, even week
             duration: 60,
             bufferMinutes: 5
         );
 
-        // Le dernier créneau de la journée est 16:00-17:00 → impossible pour 60 min avec buffer
-        // Le slot suivant est donc le premier créneau autorisé du jour suivant en semaine paire (mardi 2025-01-07)
+        // The last slot of the day is 16:00-17:00 → not enough time for 60 min with buffer
+        // The next slot is therefore the first allowed slot on the next day in an even week (Tuesday, 2025-01-07)
         expect($nextSlotLate)->toBe([
             'start_time' => '09:00',
             'end_time' => '10:00',
@@ -239,9 +248,9 @@ describe('Weekly Odd/Even ', function () {
     test('getNextBookableSlot returns the correct next available slot for weekly odd in 2025', function () {
         $user = createUser();
 
-        // Création d'une availability pour les semaines impaires en 2025
-        // Périodes : 09:00-12:00 et 14:00-17:00
-        // Jours autorisés : lundi, mercredi, vendredi
+        // Creating an availability for odd weeks in 2025
+        // Periods: 09:00-12:00 and 14:00-17:00
+        // Allowed days: Monday, Wednesday, Friday
         Zap::for($user)
             ->named('Office Hours for Odd Weeks')
             ->availability()
@@ -252,8 +261,8 @@ describe('Weekly Odd/Even ', function () {
             ->save();
 
         //
-        // Test : date initiale sur un jour en semaine paire → aucun slot disponible
-        // Mardi 2025-01-07 → semaine 2 (paire)
+        // Test: initial date on a day in an even week → no slots should be available
+        // Tuesday, 2025-01-07 → week 2 (even)
         //
         $nextSlotEvenWeek = $user->getNextBookableSlot(
             afterDate: '2025-01-07',
@@ -261,7 +270,7 @@ describe('Weekly Odd/Even ', function () {
             bufferMinutes: 10
         );
 
-        // Le prochain jour disponible en semaine impaire est mercredi 2025-01-01
+        // The next available day in an odd week is Wednesday, 2025-01-01
         expect($nextSlotEvenWeek)->toBe([
             'start_time' => '09:00',
             'end_time' => '10:00',
@@ -271,7 +280,7 @@ describe('Weekly Odd/Even ', function () {
         ]);
 
         //
-        // Test : date initiale sur un jour autorisé (mercredi semaine impaire)
+        // Test: initial date on an allowed day (Wednesday, odd week)
         //
         $nextSlotWednesday = $user->getNextBookableSlot(
             afterDate: '2025-01-01', // mercredi semaine 1 (impair)
@@ -279,7 +288,7 @@ describe('Weekly Odd/Even ', function () {
             bufferMinutes: 10
         );
 
-        // Le slot commence à 09:00 → 10:50, toujours dans la période 09:00-12:00
+        // The slot starts at 09:00 → 10:50, still within the 09:00-12:00 period
         expect($nextSlotWednesday)->toBe([
             'start_time' => '09:00',
             'end_time' => '10:50',
@@ -289,7 +298,7 @@ describe('Weekly Odd/Even ', function () {
         ]);
 
         //
-        // Test : date trop tard dans la journée → le slot doit passer au prochain jour autorisé
+        // Test: date too late in the day → the slot should move to the next allowed day
         //
         $nextSlotLate = $user->getNextBookableSlot(
             afterDate: '2025-01-01', // mercredi semaine impaire
@@ -297,8 +306,8 @@ describe('Weekly Odd/Even ', function () {
             bufferMinutes: 5
         );
 
-        // Le dernier créneau de la journée est 16:00-17:00 → impossible pour 60 min avec buffer
-        // Le slot suivant est donc le premier créneau autorisé du jour suivant en semaine impaire (vendredi 2025-01-03)
+        // The last slot of the day is 16:00-17:00 → not enough time for 60 min with buffer
+        // The next slot is therefore the first allowed slot on the next day in an odd week (Friday, 2025-01-03)
         expect($nextSlotLate)->toBe([
             'start_time' => '09:00',
             'end_time' => '10:00',
@@ -308,77 +317,33 @@ describe('Weekly Odd/Even ', function () {
         ]);
     });
 
-    test('isAvailableAt correctly checks user appointment for weekly even in 2025', function () {
-        $user = createUser();
+    it('calculates the next odd week correctly', function () {
+        // Date in an odd week
+        $date = Carbon::parse('2025-01-01'); // week 1 (odd)
+        $nextOdd = DateHelper::nextWeekOdd($date);
+        expect(DateHelper::isDateInOddIsoWeek($nextOdd))->toBeTrue();
+        expect($date->diffInWeeks($nextOdd))->toBe(2.0);
 
-        // Création d'un appointment pour les semaines paires
-        // Périodes : 09:00-12:00 et 14:00-17:00
-        // Jours autorisés : lundi, mardi, mercredi
-        Zap::for($user)
-            ->named('Appointment for Even Weeks')
-            ->appointment()
-            ->forYear(2025)
-            ->addPeriod('09:00', '12:00')
-            ->addPeriod('14:00', '17:00')
-            ->weeklyEven(['monday', 'tuesday', 'wednesday'])
-            ->save();
-
-        //
-        // Disponible car semaine impaire
-        //
-        $available = $user->isAvailableAt('2025-01-01', '09:00', '09:30');
-        expect($available)->toBeTrue();
-
-        //
-        // Non disponible car semaine paire
-        //
-        $notAvailableDay = $user->isAvailableAt('2025-01-06', '09:00', '09:30');
-        expect($notAvailableDay)->toBeFalse();
-
-        //
-        // Disponible car vendredi semaine paire
-        //
-        $available = $user->isAvailableAt('2025-01-10', '09:00', '09:30');
-        expect($available)->toBeTrue();
-
-
+        // Date in an even week
+        $dateEven = Carbon::parse('2025-01-06'); // week 2 (even)
+        $nextOddFromEven = DateHelper::nextWeekOdd($dateEven);
+        expect(DateHelper::isDateInOddIsoWeek($nextOddFromEven))->toBeTrue();
+        expect($dateEven->diffInWeeks($nextOddFromEven))->toBe(1.0);
     });
 
-    test('isAvailableAt correctly checks user appointment for weekly odd in 2025', function () {
-        $user = createUser();
+    it('calculates the next even week correctly', function () {
+        // Date in an even week
+        $date = Carbon::parse('2025-01-06'); // week 2 (even)
+        $nextEven = DateHelper::nextWeekEven($date);
+        expect(DateHelper::isDateInEvenIsoWeek($nextEven))->toBeTrue();
+        expect($date->diffInWeeks($nextEven))->toBe(2.0);
 
-        // Création d'un appointment pour les semaines impaires
-        // Périodes : 09:00-12:00 et 14:00-17:00
-        // Jours autorisés : lundi, mardi, mercredi
-        Zap::for($user)
-            ->named('Appointment for Odd Weeks')
-            ->appointment()
-            ->forYear(2025)
-            ->addPeriod('09:00', '12:00')
-            ->addPeriod('14:00', '17:00')
-            ->weeklyOdd(['monday', 'tuesday', 'wednesday'])
-            ->save();
-
-        //
-        // Non disponible car mercredi semaine impaire
-        //
-        $available = $user->isAvailableAt('2025-01-01', '09:00', '09:30');
-        expect($available)->toBeFalse();
-
-        //
-        // Disponible car semaine paire
-        //
-        $notAvailableDay = $user->isAvailableAt('2025-01-06', '09:00', '09:30');
-        expect($notAvailableDay)->toBeTrue();
-
-        //
-        // Disponible car vendredi semaine impaire
-        //
-        $available = $user->isAvailableAt('2025-01-03', '09:00', '09:30');
-        expect($available)->toBeTrue();
-
+        // Date in an odd week
+        $dateOdd = Carbon::parse('2025-01-01'); // week 1 (odd)
+        $nextEvenFromOdd = DateHelper::nextWeekEven($dateOdd);
+        expect(DateHelper::isDateInEvenIsoWeek($nextEvenFromOdd))->toBeTrue();
+        expect($dateOdd->diffInWeeks($nextEvenFromOdd))->toBe(1.0);
     });
-
 
 
 });

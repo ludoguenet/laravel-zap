@@ -210,20 +210,15 @@ class Schedule extends Model
                                 )
                             )
                             ->whereJsonContains('frequency_config->days', $weekday);
-                })
-                    // weekly_even or weekly_odd
-                    ->orWhere(function ($query) use ($weekday, $isDateInEvenIsoWeek) {
-                        $query->where('is_recurring', true)
-                            ->where('frequency', $isDateInEvenIsoWeek ? 'weekly_even' : 'weekly_odd')
-                            ->whereJsonContains('frequency_config->days', $weekday);
-                })
-                    // weekly_even or weekly_odd
-                    ->orWhere(function ($query) use ($weekday, $isDateInEvenIsoWeek) {
-                        $query->where('is_recurring', true)
-                            ->where('frequency', $isDateInEvenIsoWeek ? 'weekly_even' : 'weekly_odd')
-                            ->whereJsonContains('frequency_config->days', $weekday);
                     })
-
+                    //
+                    // 4 WEEKLY_EVEN | WEEKLY_ODD — match weekday inside config
+                    //
+                    ->orWhere(function ($query) use ($weekday, $isDateInEvenIsoWeek) {
+                        $query->where('is_recurring', true)
+                            ->where('frequency', $isDateInEvenIsoWeek ? Frequency::WEEKLY_EVEN->value : Frequency::WEEKLY_ODD->value)
+                            ->whereJsonContains('frequency_config->days', $weekday);
+                })
 
                 //
                 // 5️⃣ MONTHLY — match day_of_month from config
