@@ -136,8 +136,17 @@ describe('Recurring Schedule Availability', function () {
         expect($user->isAvailableAt('2025-04-15', '14:00', '16:00'))->toBeTrue('April 15th should be available');
     });
 
-    it('getAvailableSlots works correctly with recurring schedules', function () {
+    it('getBookableSlots works correctly with recurring schedules', function () {
         $user = createUser();
+
+        // Create availability schedule
+        Zap::for($user)
+            ->named('Full Day Availability')
+            ->availability()
+            ->from('2025-03-15')
+            ->addPeriod('08:00', '18:00')
+            ->daily()
+            ->save();
 
         // Block afternoon every day
         $schedule = Zap::for($user)
@@ -147,7 +156,7 @@ describe('Recurring Schedule Availability', function () {
             ->daily()
             ->save();
 
-        $slots = $user->getAvailableSlots('2025-03-15', '08:00', '18:00', 60);
+        $slots = $user->getBookableSlots('2025-03-15', 60);
 
         // Check that morning slots are available
         $morningSlots = array_filter($slots, fn ($slot) => $slot['start_time'] < '13:00');
@@ -174,8 +183,17 @@ describe('Recurring Schedule Availability', function () {
         }
     });
 
-    it('should make only two queries when execute getAvailableSlots', function () {
+    it('should make efficient queries when execute getBookableSlots', function () {
         $user = createUser();
+
+        // Create availability schedule
+        Zap::for($user)
+            ->named('Full Day Availability')
+            ->availability()
+            ->from('2025-03-15')
+            ->addPeriod('08:00', '18:00')
+            ->daily()
+            ->save();
 
         // Block afternoon every day
         Zap::for($user)
@@ -186,13 +204,28 @@ describe('Recurring Schedule Availability', function () {
             ->save();
 
         DB::enableQueryLog();
-        $user->getAvailableSlots('2025-03-15', '08:00', '18:00', 60);
+        $user->getBookableSlots('2025-03-15', 60);
         $queries = DB::getQueryLog();
-        expect(count($queries))->toBe(2);
+        // Expected queries:
+        // 1. Availability schedules query
+        // 2. Availability periods eager load query
+        // 3. Blocking schedules query
+        // 4. Blocking periods eager load query
+        // Total: 4 queries (2 for each schedule type with eager loading)
+        expect(count($queries))->toBeLessThanOrEqual(4);
     });
 
-    it('getNextAvailableSlot works correctly with recurring schedules', function () {
+    it('getNextBookableSlot works correctly with recurring schedules', function () {
         $user = createUser();
+
+        // Create availability only on weekends
+        Zap::for($user)
+            ->named('Weekend Availability')
+            ->availability()
+            ->from('2025-03-15')
+            ->addPeriod('09:00', '17:00')
+            ->weekly(['saturday', 'sunday'])
+            ->save();
 
         // Block all working hours on weekdays
         $schedule = Zap::for($user)
@@ -202,8 +235,8 @@ describe('Recurring Schedule Availability', function () {
             ->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
             ->save();
 
-        // Looking for next available slot during working hours should find weekend
-        $nextSlot = $user->getNextAvailableSlot('2025-03-17', 60, '09:00', '17:00');
+        // Looking for next available slot should find weekend
+        $nextSlot = $user->getNextBookableSlot('2025-03-17', 60);
 
         expect($nextSlot)->not->toBeNull('Should find an available slot');
 
@@ -352,6 +385,36 @@ describe('Recurring Schedule Availability', function () {
         $isAvailable = $user->isAvailableAt('2025-11-05', '02:00', '02:01');
 
         expect($isAvailable)->toBeTrue();
+    });
+
+    it('handles extended recurring frequencies correctly', function () {
+        $user = createUser();
+
+        // Bi-monthly on 5th and 20th
+        Zap::for($user)
+            ->named('Bi-Monthly Review')
+            ->from('2025-01-05')
+            ->to('2025-03-31')
+            ->addPeriod('10:00', '12:00')
+            ->bimonthly(['days_of_month' => [5, 20]])
+            ->save();
+
+        // Quarterly on 15th starting February
+        Zap::for($user)
+            ->named('Quarterly Check')
+            ->from('2025-02-15')
+            ->to('2025-11-15')
+            ->addPeriod('14:00', '16:00')
+            ->quarterly(['day_of_month' => 15])
+            ->save();
+
+        expect($user->isAvailableAt('2025-01-05', '10:00', '11:00'))->toBeFalse();
+        expect($user->isAvailableAt('2025-01-20', '10:00', '11:00'))->toBeFalse();
+        expect($user->isAvailableAt('2025-01-10', '10:00', '11:00'))->toBeTrue();
+
+        expect($user->isAvailableAt('2025-02-15', '14:00', '15:00'))->toBeFalse();
+        expect($user->isAvailableAt('2025-05-15', '14:00', '15:00'))->toBeFalse();
+        expect($user->isAvailableAt('2025-03-15', '14:00', '15:00'))->toBeTrue();
     });
 
 });

@@ -257,8 +257,15 @@ describe('Availability Checking', function () {
         expect($user->isAvailableAt('2025-01-01', '12:00', '13:00'))->toBeTrue();  // After
     });
 
-    it('generates accurate available slots', function () {
+    it('generates accurate bookable slots', function () {
         $user = createUser();
+
+        // Create availability schedule
+        Zap::for($user)
+            ->availability()
+            ->from('2025-01-01')
+            ->addPeriod('09:00', '13:00')
+            ->save();
 
         // Block 10:00-11:00
         Zap::for($user)
@@ -266,7 +273,7 @@ describe('Availability Checking', function () {
             ->addPeriod('10:00', '11:00')
             ->save();
 
-        $slots = $user->getAvailableSlots('2025-01-01', '09:00', '13:00', 60);
+        $slots = $user->getBookableSlots('2025-01-01', 60);
 
         expect($slots)->toHaveCount(4);
         expect($slots[0]['is_available'])->toBeTrue();  // 09:00-10:00
@@ -275,8 +282,16 @@ describe('Availability Checking', function () {
         expect($slots[3]['is_available'])->toBeTrue();  // 12:00-13:00
     });
 
-    it('finds next available slot across multiple days', function () {
+    it('finds next bookable slot across multiple days', function () {
         $user = createUser();
+
+        // Create availability schedule
+        Zap::for($user)
+            ->availability()
+            ->from('2025-01-01')
+            ->addPeriod('09:00', '17:00')
+            ->daily()
+            ->save();
 
         // Block entire first day
         Zap::for($user)
@@ -284,11 +299,32 @@ describe('Availability Checking', function () {
             ->addPeriod('09:00', '17:00')
             ->save();
 
-        $nextSlot = $user->getNextAvailableSlot('2025-01-01', 60, '09:00', '17:00');
+        $nextSlot = $user->getNextBookableSlot('2025-01-01', 60);
 
         expect($nextSlot)->toBeArray();
         expect($nextSlot['date'])->toBe('2025-01-02'); // Should find slot on next day
         expect($nextSlot['start_time'])->toBe('09:00');
+    });
+
+    it('detects conflicts for extended recurring frequencies on the anchor day', function () {
+        $user = createUser();
+
+        // Existing appointment on the anchor Monday
+        Zap::for($user)
+            ->appointment()
+            ->from('2025-01-06')
+            ->addPeriod('09:00', '10:00')
+            ->save();
+
+        // Bi-weekly appointment starting on the same anchor day should conflict
+        expect(function () use ($user) {
+            Zap::for($user)
+                ->appointment()
+                ->biweekly(['monday'])
+                ->from('2025-01-06')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+        })->toThrow(ScheduleConflictException::class);
     });
 
 });

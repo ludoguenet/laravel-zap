@@ -4,11 +4,13 @@ namespace Zap\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Zap\Enums\Frequency;
 use Zap\Models\Schedule;
 
 class ScheduleCreated
 {
-    use Dispatchable, SerializesModels;
+    use Dispatchable;
+    use SerializesModels;
 
     /**
      * Create a new event instance.
@@ -54,7 +56,7 @@ class ScheduleCreated
             'start_date' => $this->schedule->start_date->toDateString(),
             'end_date' => $this->schedule->end_date?->toDateString(),
             'is_recurring' => $this->schedule->is_recurring,
-            'frequency' => $this->schedule->frequency,
+            'frequency' => $this->schedule->frequency instanceof Frequency ? $this->schedule->frequency->value : $this->schedule->frequency,
             'created_at' => $this->schedule->created_at->toISOString(),
         ];
     }

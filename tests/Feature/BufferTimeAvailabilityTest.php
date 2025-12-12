@@ -16,15 +16,22 @@ describe('Buffer Time Availability Tests', function () {
         Carbon::setTestNow(); // Reset
     });
 
-    describe('getAvailableSlots with buffer time', function () {
+    describe('getBookableSlots with buffer time', function () {
 
         it('generates slots with 10-minute buffer time from config', function () {
             config(['zap.time_slots.buffer_minutes' => 10]);
 
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '12:00')
+                ->save();
+
             // Get 50-minute slots with 10-minute buffer
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '12:00', 50);
+            $slots = $user->getBookableSlots('2025-03-15', 50);
 
             // Should generate: 9:00-9:50, 10:00-10:50, 11:00-11:50
             expect($slots)->toHaveCount(3);
@@ -45,8 +52,15 @@ describe('Buffer Time Availability Tests', function () {
         it('generates slots with buffer time passed as parameter', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '11:00')
+                ->save();
+
             // Get 30-minute slots with 15-minute buffer (passed as parameter)
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '11:00', 30, 15);
+            $slots = $user->getBookableSlots('2025-03-15', 30, 15);
 
             // Should generate: 9:00-9:30, 9:45-10:15, 10:30-11:00
             expect($slots)->toHaveCount(3);
@@ -69,8 +83,15 @@ describe('Buffer Time Availability Tests', function () {
 
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '10:30')
+                ->save();
+
             // Non-zero parameter (10 minutes) should override config (5 minutes)
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '10:30', 60, 10);
+            $slots = $user->getBookableSlots('2025-03-15', 60, 10);
 
             expect($slots[0]['buffer_minutes'])->toBe(10);
             expect($slots[0]['start_time'])->toBe('09:00');
@@ -82,8 +103,15 @@ describe('Buffer Time Availability Tests', function () {
 
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '12:00')
+                ->save();
+
             // Not passing buffer parameter should use config value (5 minutes)
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '12:00', 60);
+            $slots = $user->getBookableSlots('2025-03-15', 60);
 
             expect($slots[0]['buffer_minutes'])->toBe(5);
             expect($slots[0]['start_time'])->toBe('09:00');
@@ -100,8 +128,15 @@ describe('Buffer Time Availability Tests', function () {
 
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '11:00')
+                ->save();
+
             // Explicitly passing 0 should override config and use 0
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '11:00', 60, 0);
+            $slots = $user->getBookableSlots('2025-03-15', 60, 0);
 
             expect($slots[0]['buffer_minutes'])->toBe(0);
             expect($slots[0]['start_time'])->toBe('09:00');
@@ -111,8 +146,15 @@ describe('Buffer Time Availability Tests', function () {
         it('ignores negative buffer time', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '11:00')
+                ->save();
+
             // Negative buffer should be treated as 0
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '11:00', 60, -5);
+            $slots = $user->getBookableSlots('2025-03-15', 60, -5);
 
             expect($slots[0]['buffer_minutes'])->toBe(0);
             expect($slots[0]['start_time'])->toBe('09:00');
@@ -122,8 +164,15 @@ describe('Buffer Time Availability Tests', function () {
         it('handles large buffer time that reduces available slots', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '12:00')
+                ->save();
+
             // 60-minute slots with 30-minute buffer in 3-hour window
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '12:00', 60, 30);
+            $slots = $user->getBookableSlots('2025-03-15', 60, 30);
 
             // Should generate: 9:00-10:00, 10:30-11:30
             expect($slots)->toHaveCount(2);
@@ -138,8 +187,15 @@ describe('Buffer Time Availability Tests', function () {
         it('handles buffer time that prevents any slots from fitting', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '11:00')
+                ->save();
+
             // 60-minute slots with 120-minute buffer in 2-hour window
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '11:00', 60, 120);
+            $slots = $user->getBookableSlots('2025-03-15', 60, 120);
 
             // Only first slot should fit
             expect($slots)->toHaveCount(1);
@@ -150,13 +206,20 @@ describe('Buffer Time Availability Tests', function () {
         it('respects existing blocked schedules with buffer time', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '13:00')
+                ->save();
+
             // Block 10:00-11:00
             Zap::for($user)
                 ->from('2025-03-15')
                 ->addPeriod('10:00', '11:00')
                 ->save();
 
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '13:00', 50, 10);
+            $slots = $user->getBookableSlots('2025-03-15', 50, 10);
 
             // Find slots that should be available/blocked
             $slot1 = collect($slots)->firstWhere('start_time', '09:00'); // Should be available
@@ -172,10 +235,17 @@ describe('Buffer Time Availability Tests', function () {
 
     });
 
-    describe('getNextAvailableSlot with buffer time', function () {
+    describe('getNextBookableSlot with buffer time', function () {
 
         it('finds next slot considering buffer time', function () {
             $user = createUser();
+
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '17:00')
+                ->save();
 
             // Block 09:00-10:00
             Zap::for($user)
@@ -184,7 +254,7 @@ describe('Buffer Time Availability Tests', function () {
                 ->save();
 
             // Look for 50-minute slot with 10-minute buffer
-            $nextSlot = $user->getNextAvailableSlot('2025-03-15', 50, '09:00', '17:00', 10);
+            $nextSlot = $user->getNextBookableSlot('2025-03-15', 50, 10);
 
             // Should find 10:00-10:50 slot (next available after blocked 9:00)
             expect($nextSlot['start_time'])->toBe('10:00');
@@ -195,6 +265,14 @@ describe('Buffer Time Availability Tests', function () {
         it('finds slot on next day when buffer prevents fitting', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '17:00')
+                ->daily()
+                ->save();
+
             // Block most of the day leaving only small gap
             Zap::for($user)
                 ->from('2025-03-15')
@@ -202,7 +280,7 @@ describe('Buffer Time Availability Tests', function () {
                 ->save();
 
             // Look for 60-minute slot with 30-minute buffer
-            $nextSlot = $user->getNextAvailableSlot('2025-03-15', 60, '09:00', '17:00', 30);
+            $nextSlot = $user->getNextBookableSlot('2025-03-15', 60, 30);
 
             // Should find slot on next day
             expect($nextSlot['date'])->toBe('2025-03-16');
@@ -217,8 +295,15 @@ describe('Buffer Time Availability Tests', function () {
         it('handles very small slot durations with buffer', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+
             // 15-minute slots with 5-minute buffer
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '10:00', 15, 5);
+            $slots = $user->getBookableSlots('2025-03-15', 15, 5);
 
             // Should generate: 9:00-9:15, 9:20-9:35, 9:40-9:55
             expect($slots)->toHaveCount(3);
@@ -231,8 +316,15 @@ describe('Buffer Time Availability Tests', function () {
         it('handles buffer time equal to slot duration', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '12:00')
+                ->save();
+
             // 30-minute slots with 30-minute buffer
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '12:00', 30, 30);
+            $slots = $user->getBookableSlots('2025-03-15', 30, 30);
 
             // Should generate: 9:00-9:30, 10:00-10:30, 11:00-11:30
             expect($slots)->toHaveCount(3);
@@ -245,8 +337,15 @@ describe('Buffer Time Availability Tests', function () {
         it('handles buffer time larger than slot duration', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '12:00')
+                ->save();
+
             // 30-minute slots with 45-minute buffer
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '12:00', 30, 45);
+            $slots = $user->getBookableSlots('2025-03-15', 30, 45);
 
             // Should generate: 9:00-9:30, 10:15-10:45, 11:30-12:00
             expect($slots)->toHaveCount(3);
@@ -263,11 +362,18 @@ describe('Buffer Time Availability Tests', function () {
         it('maintains existing behavior when buffer is 0', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '11:00')
+                ->save();
+
             // Test with both config and parameter set to 0
             config(['zap.time_slots.buffer_minutes' => 0]);
 
-            $slotsDefault = $user->getAvailableSlots('2025-03-15', '09:00', '11:00', 60);
-            $slotsExplicit = $user->getAvailableSlots('2025-03-15', '09:00', '11:00', 60, 0);
+            $slotsDefault = $user->getBookableSlots('2025-03-15', 60);
+            $slotsExplicit = $user->getBookableSlots('2025-03-15', 60, 0);
 
             // Both should generate same result: 9:00-10:00, 10:00-11:00
             expect($slotsDefault)->toHaveCount(2);
@@ -285,8 +391,15 @@ describe('Buffer Time Availability Tests', function () {
         it('works correctly when no buffer config is set', function () {
             $user = createUser();
 
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '11:00')
+                ->save();
+
             // Don't set any buffer config, should default to 0
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '11:00', 60);
+            $slots = $user->getBookableSlots('2025-03-15', 60);
 
             // Should generate: 9:00-10:00, 10:00-11:00 (no gaps)
             expect($slots)->toHaveCount(2);
@@ -298,7 +411,14 @@ describe('Buffer Time Availability Tests', function () {
         it('includes buffer_minutes in slot data for consistency', function () {
             $user = createUser();
 
-            $slots = $user->getAvailableSlots('2025-03-15', '09:00', '10:00', 60, 5);
+            // Create availability schedule
+            Zap::for($user)
+                ->availability()
+                ->from('2025-03-15')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+
+            $slots = $user->getBookableSlots('2025-03-15', 60, 5);
 
             foreach ($slots as $slot) {
                 expect($slot)->toHaveKey('start_time');

@@ -230,6 +230,31 @@ describe('Rule Control', function () {
             expect($schedule)->toBeInstanceOf(Schedule::class);
         });
 
+        it('can override no_overlap rule explicitly by using the allowOverlap() in the scheduleBuilder', function () {
+            config(['zap.default_rules.no_overlap.enabled' => true]);
+
+            $user = createUser();
+
+            // Create first appointment
+            Zap::for($user)
+                ->named('First Appointment')
+                ->appointment()
+                ->from('2025-01-01')
+                ->addPeriod('09:00', '10:00')
+                ->save();
+
+            // This should succeed when explicitly disabling no_overlap
+            $schedule = Zap::for($user)
+                ->named('Second Appointment')
+                ->appointment()
+                ->from('2025-01-01')
+                ->addPeriod('09:30', '10:30') // Overlaps with first appointment
+                ->allowOverlap()
+                ->save();
+
+            expect($schedule)->toBeInstanceOf(Schedule::class);
+        });
+
     });
 
     describe('Rule Merging', function () {

@@ -3,8 +3,10 @@
 namespace Zap\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
+use Zap\Data\FrequencyConfig;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
 use Zap\Services\ConflictDetectionService;
@@ -135,9 +137,15 @@ trait HasSchedules
 
     /**
      * Check if this model is available during a specific time period.
+     *
+     * @deprecated This method is deprecated. Use isBookableAt() or getBookableSlots() instead.
      */
     public function isAvailableAt(string $date, string $startTime, string $endTime, ?Collection $schedules = null): bool
     {
+        trigger_error(
+            'isAvailableAt() is deprecated. Use isBookableAt() or getBookableSlots() instead.',
+            E_USER_DEPRECATED
+        );
         // Get all active schedules for this model on this date
         $schedules = $schedules ?? \Zap\Models\Schedule::where('schedulable_type', get_class($this))
             ->where('schedulable_id', $this->getKey())
@@ -218,38 +226,13 @@ trait HasSchedules
      */
     protected function shouldCreateRecurringInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
     {
-        $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
 
-        switch ($frequency) {
-            case 'daily':
-                return true;
-
-            case 'weekly':
-                $allowedDays = $config['days'] ?? ['monday'];
-                $allowedDayNumbers = array_map(function ($day) {
-                    return match (strtolower($day)) {
-                        'sunday' => 0,
-                        'monday' => 1,
-                        'tuesday' => 2,
-                        'wednesday' => 3,
-                        'thursday' => 4,
-                        'friday' => 5,
-                        'saturday' => 6,
-                        default => 1, // Default to Monday
-                    };
-                }, $allowedDays);
-
-                return in_array($date->dayOfWeek, $allowedDayNumbers);
-
-            case 'monthly':
-                $dayOfMonth = $config['day_of_month'] ?? $schedule->start_date->day;
-
-                return $date->day === $dayOfMonth;
-
-            default:
-                return false;
+        if (! ($config instanceof FrequencyConfig)) {
+            return false;
         }
+
+        return $config->shouldCreateRecurringInstance($schedule, $date);
     }
 
     /**
@@ -287,6 +270,8 @@ trait HasSchedules
 
     /**
      * Get available time slots for a specific date.
+     *
+     * @deprecated This method is deprecated. Use getBookableSlots() instead.
      */
     public function getAvailableSlots(
         string $date,
@@ -295,6 +280,10 @@ trait HasSchedules
         int $slotDuration = 60,
         ?int $bufferMinutes = null
     ): array {
+        trigger_error(
+            'getAvailableSlots() is deprecated. Use getBookableSlots() instead.',
+            E_USER_DEPRECATED
+        );
         // Validate inputs to prevent infinite loops
         if ($slotDuration <= 0) {
             return [];
@@ -421,6 +410,81 @@ trait HasSchedules
     }
 
     /**
+     * Check if this model has at least one bookable slot on a given date.
+     */
+    public function isBookableAt(
+        string $date,
+        int $slotDuration = 60,
+        ?int $bufferMinutes = null
+    ): bool {
+        $slots = $this->getBookableSlots($date, $slotDuration, $bufferMinutes);
+
+        foreach ($slots as $slot) {
+            if (! empty($slot['is_available'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if the model is bookable at a specific date and time range.
+     *
+     * This method checks two conditions:
+     * 1. The time range must not be blocked by any active schedules
+     *    (CUSTOM schedules or schedules that prevent overlaps).
+     * 2. The requested time range must fit entirely inside one of the model's
+     *    bookable slots for the given date.
+     *
+     * @param  string  $date  The date to check (Y-m-d)
+     * @param  string  $startTime  Requested start time (HH:MM)
+     * @param  string  $endTime  Requested end time (HH:MM)
+     * @param  Collection|null  $schedules  Optional preloaded schedules
+     * @return bool True if bookable, false otherwise
+     */
+    public function isBookableAtTime(string $date, string $startTime, string $endTime, ?Collection $schedules = null): bool
+    {
+        // Load active schedules for this model on the given date
+        $schedules = $schedules ?? $this->schedules()
+            ->active()
+            ->forDate($date)
+            ->with('periods')
+            ->get();
+
+        // Retrieve all bookable slots generated for the given date
+        $bookableSlots = $this->getBookableSlots($date);
+
+        // Check if any schedule blocks the requested time range
+        foreach ($schedules as $schedule) {
+            $shouldBlock = $schedule->schedule_type->is(ScheduleTypes::CUSTOM) || $schedule->preventsOverlaps();
+            if ($shouldBlock && $this->scheduleBlocksTime($schedule, $date, $startTime, $endTime)) {
+                return false;
+            }
+        }
+
+        // Verify that the requested time fits within an available bookable slot
+        foreach ($bookableSlots as $slot) {
+            if (empty($slot['is_available'])) {
+                continue; // Skip unavailable slots
+            }
+
+            $slotStart = Carbon::parse($slot['start_time']);
+            $slotEnd = Carbon::parse($slot['end_time']);
+
+            $requestedStart = Carbon::parse($startTime);
+            $requestedEnd = Carbon::parse($endTime);
+
+            // The requested time range must be fully contained within the slot
+            if ($requestedStart >= $slotStart && $requestedEnd <= $slotEnd) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Get all availability periods for a specific date in a single optimized query.
      */
     protected function getAvailabilityPeriodsForDate(string $date): \Illuminate\Support\Collection
@@ -472,7 +536,11 @@ trait HasSchedules
     {
         return Schedule::where('schedulable_type', get_class($this))
             ->where('schedulable_id', $this->getKey())
-            ->whereIn('schedule_type', [ScheduleTypes::APPOINTMENT, ScheduleTypes::BLOCKED, ScheduleTypes::CUSTOM])
+            ->whereIn('schedule_type', [
+                ScheduleTypes::APPOINTMENT->value,
+                ScheduleTypes::BLOCKED->value,
+                ScheduleTypes::CUSTOM->value,
+            ])
             ->active()
             ->forDate($date)
             ->with('periods')
@@ -510,8 +578,8 @@ trait HasSchedules
         $startDate = $afterDate ?? now()->format('Y-m-d');
         $checkDate = \Carbon\Carbon::parse($startDate);
 
-        // Check up to 30 days in the future
-        for ($i = 0; $i < 30; $i++) {
+        // Check up to 365 days in the future to cover all recurring frequencies
+        for ($i = 0; $i < 365; $i++) {
             $dateString = $checkDate->format('Y-m-d');
             $slots = $this->getBookableSlots($dateString, $duration, $bufferMinutes);
 
@@ -529,6 +597,8 @@ trait HasSchedules
 
     /**
      * Get the next available time slot.
+     *
+     * @deprecated This method is deprecated. Use getNextBookableSlot() instead.
      */
     public function getNextAvailableSlot(
         ?string $afterDate = null,
@@ -537,6 +607,10 @@ trait HasSchedules
         string $dayEnd = '17:00',
         ?int $bufferMinutes = null
     ): ?array {
+        trigger_error(
+            'getNextAvailableSlot() is deprecated. Use getNextBookableSlot() instead.',
+            E_USER_DEPRECATED
+        );
         // Validate inputs
         if ($duration <= 0) {
             return null;

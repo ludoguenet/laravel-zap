@@ -5,6 +5,15 @@ namespace Zap\Builders;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Zap\Data\AnnuallyFrequencyConfig;
+use Zap\Data\BiMonthlyFrequencyConfig;
+use Zap\Data\BiWeeklyFrequencyConfig;
+use Zap\Data\DailyFrequencyConfig;
+use Zap\Data\FrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig;
+use Zap\Data\QuarterlyFrequencyConfig;
+use Zap\Data\SemiAnnuallyFrequencyConfig;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
 use Zap\Services\ScheduleService;
@@ -137,7 +146,38 @@ class ScheduleBuilder
     public function daily(): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'daily';
+        $this->attributes['frequency'] = Frequency::DAILY;
+        $this->attributes['frequency_config'] = new DailyFrequencyConfig;
+
+        return $this;
+    }
+
+    /**
+     * Internal helper to configure a weekly frequency for the schedule.
+     *
+     * This method centralizes the logic for setting weekly recurring schedules,
+     * including standard weeks, odd weeks, and time periods.
+     * It prevents code duplication across public methods like weekly(), weekDays(), weeklyOdd() and weekOddDays()
+     *
+     * @param  Frequency  $frequency  The frequency type (WEEKLY, WEEKLY_ODD, etc.)
+     * @param  array  $days  Array of days the schedule applies to
+     * @param  string|null  $startTime  Optional start time for the daily period
+     * @param  string|null  $endTime  Optional end time for the daily period
+     * @return self Returns the current instance for method chaining
+     */
+    private function setWeeklyFrequency(Frequency $frequency, array $days, ?string $startTime = null, ?string $endTime = null): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = $frequency;
+
+        $configClass = app($frequency->configClass());
+        $this->attributes['frequency_config'] = $configClass->fromArray([
+            'days' => $days,
+        ]);
+
+        if ($startTime !== null && $endTime !== null) {
+            $this->addPeriod($startTime, $endTime, null);
+        }
 
         return $this;
     }
@@ -147,9 +187,72 @@ class ScheduleBuilder
      */
     public function weekly(array $days = []): self
     {
+        $this->setWeeklyFrequency(Frequency::WEEKLY, $days);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring and add a time period.
+     */
+    public function weekDays(array $days, string $startTime, string $endTime): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY, $days, $startTime, $endTime);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring on odd weeks.
+     */
+    public function weeklyOdd(array $days = []): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY_ODD, $days);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring on odd weeks and add a time period.
+     */
+    public function weekOddDays(array $days, string $startTime, string $endTime): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY_ODD, $days, $startTime, $endTime);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring on even weeks.
+     */
+    public function weeklyEven(array $days = []): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY_EVEN, $days);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring on even weeks and add a time period.
+     */
+    public function weekEvenDays(array $days, string $startTime, string $endTime): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY_EVEN, $days, $startTime, $endTime);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as bi-weekly recurring.
+     */
+    public function biweekly(array $days = [], CarbonInterface|string|null $startsOn = null): self
+    {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'weekly';
-        $this->attributes['frequency_config'] = ['days' => $days];
+        $this->attributes['frequency'] = Frequency::BIWEEKLY;
+        $this->attributes['frequency_config'] = BiWeeklyFrequencyConfig::fromArray([
+            'days' => $days,
+            'startsOn' => $startsOn,
+        ]);
 
         return $this;
     }
@@ -160,8 +263,66 @@ class ScheduleBuilder
     public function monthly(array $config = []): self
     {
         $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = 'monthly';
-        $this->attributes['frequency_config'] = $config;
+        $this->attributes['frequency'] = Frequency::MONTHLY;
+        $this->attributes['frequency_config'] = MonthlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as bi-monthly recurring.
+     */
+    public function bimonthly(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::BIMONTHLY;
+        $this->attributes['frequency_config'] = BiMonthlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as quarterly recurring.
+     */
+    public function quarterly(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::QUARTERLY;
+        $this->attributes['frequency_config'] = QuarterlyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as semi-annually recurring.
+     */
+    public function semiannually(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::SEMIANNUALLY;
+        $this->attributes['frequency_config'] = SemiAnnuallyFrequencyConfig::fromArray(
+            $config
+        );
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as annually recurring.
+     */
+    public function annually(array $config = []): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = Frequency::ANNUALLY;
+        $this->attributes['frequency_config'] = AnnuallyFrequencyConfig::fromArray(
+            $config
+        );
 
         return $this;
     }
@@ -169,8 +330,21 @@ class ScheduleBuilder
     /**
      * Set custom recurring frequency.
      */
-    public function recurring(string $frequency, array $config = []): self
+    public function recurring(string|Frequency $frequency, array|FrequencyConfig $config = []): self
     {
+        // Check if frequency is a valid enum value and convert config accordingly for backward compatibility
+        if (is_string($frequency)) {
+            $frequency = Frequency::tryFrom($frequency) ?? $frequency;
+            if ($frequency instanceof Frequency) {
+                $configClass = $frequency->configClass();
+                if ($config instanceof FrequencyConfig && ! ($config instanceof $configClass)) {
+                    throw new \InvalidArgumentException("Invalid config class for frequency {$frequency->value}. Expected ".$configClass);
+                }
+                $config = $config instanceof $configClass ? $config :
+                    $frequency->configClass()::fromArray($config);
+            }
+        }
+
         $this->attributes['is_recurring'] = true;
         $this->attributes['frequency'] = $frequency;
         $this->attributes['frequency_config'] = $config;
@@ -194,6 +368,14 @@ class ScheduleBuilder
     public function noOverlap(): self
     {
         return $this->withRule('no_overlap');
+    }
+
+    /**
+     * Add allow overlap rule.
+     */
+    public function allowOverlap(): self
+    {
+        return $this->withRule('no_overlap', ['enabled' => false]);
     }
 
     /**
@@ -322,6 +504,12 @@ class ScheduleBuilder
         // Set default schedule_type if not specified
         if (! isset($this->attributes['schedule_type'])) {
             $this->attributes['schedule_type'] = ScheduleTypes::CUSTOM;
+        }
+
+        if (isset($this->attributes['frequency_config']) && $this->attributes['frequency_config'] instanceof FrequencyConfig) {
+            $this->attributes['frequency_config']->setStartFromStartDate(
+                Carbon::parse($this->attributes['start_date'])
+            );
         }
 
         return [

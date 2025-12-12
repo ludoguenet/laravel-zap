@@ -1,5 +1,6 @@
 <?php
 
+use Zap\Enums\Frequency;
 use Zap\Exceptions\InvalidScheduleException;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
@@ -32,8 +33,8 @@ it('can create recurring weekly schedule', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('weekly');
-    expect($schedule->frequency_config)->toBe(['days' => ['monday', 'wednesday', 'friday']]);
+    expect($schedule->frequency)->toBe(Frequency::WEEKLY);
+    expect($schedule->frequency_config->toArray())->toBe(['days' => ['monday', 'wednesday', 'friday']]);
 });
 
 it('detects schedule conflicts', function () {
@@ -70,8 +71,15 @@ it('can check availability', function () {
     expect($user->isAvailableAt('2025-01-01', '10:00', '11:00'))->toBeTrue();
 });
 
-it('can get available slots', function () {
+it('can get bookable slots', function () {
     $user = createUser();
+
+    // Create availability schedule
+    Zap::for($user)
+        ->availability()
+        ->from('2025-01-01')
+        ->addPeriod('09:00', '12:00')
+        ->save();
 
     // Create a schedule that blocks 09:00-10:00
     Zap::for($user)
@@ -79,7 +87,7 @@ it('can get available slots', function () {
         ->addPeriod('09:00', '10:00')
         ->save();
 
-    $slots = $user->getAvailableSlots('2025-01-01', '09:00', '12:00', 60);
+    $slots = $user->getBookableSlots('2025-01-01', 60);
 
     expect($slots)->toBeArray();
     expect($slots[0]['is_available'])->toBeFalse(); // 09:00-10:00 should be unavailable
@@ -87,8 +95,111 @@ it('can get available slots', function () {
     expect($slots[2]['is_available'])->toBeTrue();  // 11:00-12:00 should be available
 });
 
-it('can find next available slot', function () {
+it('can check if a date is bookable using isBookableAt', function () {
     $user = createUser();
+
+    // Create availability schedule
+    Zap::for($user)
+        ->availability()
+        ->from('2025-01-01')
+        ->addPeriod('09:00', '12:00')
+        ->save();
+
+    // Initially, the date should be bookable (no blocking schedules)
+    expect($user->isBookableAt('2025-01-01', 60))->toBeTrue();
+
+    // Block all availability on that date
+    Zap::for($user)
+        ->from('2025-01-01')
+        ->addPeriod('09:00', '12:00')
+        ->save();
+
+    // With a full blocking schedule, no bookable slots should remain
+    expect($user->isBookableAt('2025-01-01', 60))->toBeFalse();
+});
+
+describe('can check if a date time is bookable using isBookableAtTime', function () {
+
+    it('returns true when the requested time fits inside a bookable slot', function () {
+        $user = createUser();
+        $availability = Zap::for($user)
+            ->availability()
+            ->forYear(2025)
+            ->addPeriod('09:00', '12:00')
+            ->addPeriod('14:00', '17:00')
+            ->weeklyEven(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+            ->save();
+
+        $isBookable = $user->isBookableAtTime('2025-01-06', '9:00', '9:30');
+
+        expect($isBookable)->toBeTrue();
+    });
+
+    it('returns false when no bookable slots exist for the requested date', function () {
+        $user = createUser();
+
+        $availability = Zap::for($user)
+            ->availability()
+            ->forYear(2025)
+            ->addPeriod('09:00', '12:00')
+            ->addPeriod('14:00', '17:00')
+            ->weeklyEven(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+            ->save();
+
+        $isBookable1 = $user->isBookableAtTime('2025-01-01', '9:00', '9:30');
+
+        $isBookable2 = $user->isBookableAtTime('2028-01-01', '9:00', '9:30');
+
+        expect($isBookable1)->toBeFalse();
+        expect($isBookable2)->toBeFalse();
+
+    });
+
+    it('returns false when an appointment already exists at the requested time', function () {
+        $user = createUser();
+
+        // Create an availability for even weeks
+        Zap::for($user)
+            ->availability()
+            ->forYear(2025)
+            ->addPeriod('09:00', '12:00')
+            ->weeklyEven(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+            ->save();
+
+        // Create an appointment inside the bookable range
+        $appointment = Zap::for($user)
+            ->appointment()
+            ->on('2025-01-06') // Monday week 2 → even
+            ->addPeriod('09:00', '09:30')
+            ->save();
+
+        $custom = Zap::for($user)
+            ->custom()
+            ->on('2025-01-06') // Monday week 2 → even
+            ->addPeriod('11:00', '11:30')
+            ->save();
+
+        // Check if the user is bookable on the same slot
+        $isBookable1 = $user->isBookableAtTime('2025-01-06', '09:00', '10:00');
+
+        $isBookable2 = $user->isBookableAtTime('2025-01-06', '11:00', '11:30');
+
+        expect($isBookable1)->toBeFalse();
+        expect($isBookable2)->toBeFalse();
+
+    });
+
+});
+
+it('can find next bookable slot', function () {
+    $user = createUser();
+
+    // Create availability schedule
+    Zap::for($user)
+        ->availability()
+        ->from('2025-01-01')
+        ->addPeriod('09:00', '17:00')
+        ->save();
 
     // Create a schedule that blocks the morning
     Zap::for($user)
@@ -96,7 +207,7 @@ it('can find next available slot', function () {
         ->addPeriod('09:00', '12:00')
         ->save();
 
-    $nextSlot = $user->getNextAvailableSlot('2025-01-01', 60, '09:00', '17:00');
+    $nextSlot = $user->getNextBookableSlot('2025-01-01', 60);
 
     expect($nextSlot)->toBeArray();
     expect($nextSlot['date'])->toBe('2025-01-01');
@@ -150,7 +261,7 @@ it('can create complex recurring schedule', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('weekly');
+    expect($schedule->frequency)->toBe(Frequency::WEEKLY);
     expect($schedule->periods)->toHaveCount(2);
     expect($schedule->description)->toBe('Available for consultations');
 });
@@ -203,10 +314,10 @@ it('supports different schedulable types', function () {
         ->addPeriod('11:00', '12:00')
         ->save();
 
-    expect($userSchedule->schedulable_type)->toContain('Model@anonymous');
-    expect($roomSchedule->schedulable_type)->toContain('Model@anonymous');
-    expect($userSchedule->schedulable_id)->toBe(1);
-    expect($roomSchedule->schedulable_id)->toBe(1);
+    expect($userSchedule->schedulable_type)->toBe('Zap\Tests\ZapTestUser');
+    expect($roomSchedule->schedulable_type)->toBe('Zap\Tests\ZapTestRoom');
+    expect($userSchedule->schedulable_id)->toBe($user->getKey());
+    expect($roomSchedule->schedulable_id)->toBe($room->getKey());
 });
 
 it('can handle monthly recurring schedules', function () {
@@ -221,8 +332,58 @@ it('can handle monthly recurring schedules', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe('monthly');
-    expect($schedule->frequency_config)->toBe(['day_of_month' => 1]);
+    expect($schedule->frequency)->toBe(Frequency::MONTHLY);
+    expect($schedule->frequency_config->toArray())->toBe(['days_of_month' => [1]]);
+});
+
+it('can create schedules with extended recurring frequencies', function () {
+    $user = createUser();
+
+    $biweekly = Zap::for($user)
+        ->named('Bi-Weekly Check-in')
+        ->from('2025-01-06')
+        ->to('2025-02-28')
+        ->addPeriod('09:00', '10:00')
+        ->biweekly(['monday'])
+        ->save();
+
+    $bimonthly = Zap::for($user)
+        ->named('Bi-Monthly Review')
+        ->from('2025-01-05')
+        ->to('2025-03-31')
+        ->addPeriod('11:00', '12:00')
+        ->bimonthly(['days_of_month' => [5, 20], 'start_month' => 1])
+        ->save();
+
+    $quarterly = Zap::for($user)
+        ->named('Quarterly Meeting')
+        ->from('2025-02-15')
+        ->to('2025-11-15')
+        ->addPeriod('13:00', '14:00')
+        ->quarterly(['day_of_month' => 15, 'start_month' => 2])
+        ->save();
+
+    $semiannually = Zap::for($user)
+        ->named('Semi-Annually Meeting')
+        ->from('2025-03-30')
+        ->to('2025-11-15')
+        ->addPeriod('13:00', '14:00')
+        ->semiannually(['day_of_month' => 20, 'start_month' => 2])
+        ->save();
+
+    $annually = Zap::for($user)
+        ->named('Annually Meeting')
+        ->from('2025-04-05')
+        ->to('2026-11-15')
+        ->addPeriod('13:00', '14:00')
+        ->annually(['day_of_month' => 20, 'start_month' => 2])
+        ->save();
+
+    expect($biweekly->frequency)->toBe(Frequency::BIWEEKLY);
+    expect($bimonthly->frequency)->toBe(Frequency::BIMONTHLY);
+    expect($quarterly->frequency)->toBe(Frequency::QUARTERLY);
+    expect($semiannually->frequency)->toBe(Frequency::SEMIANNUALLY);
+    expect($annually->frequency)->toBe(Frequency::ANNUALLY);
 });
 
 it('validates maximum duration rule', function () {

@@ -12,7 +12,7 @@
         }
     ],
     "require": {
-        "php": "^8.2"
+      "php": ">=8.2 <8.6"
     },
     "require-dev": {
         "laravel/pint": "^1.20",

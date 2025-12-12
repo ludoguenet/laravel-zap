@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Zap\Builders\ScheduleBuilder;
+use Zap\Data\FrequencyConfig;
+use Zap\Enums\Frequency;
 use Zap\Events\ScheduleCreated;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Models\Schedule;
@@ -49,9 +51,6 @@ class ScheduleService
                     $schedule->periods()->create($period);
                 }
             }
-
-            // Note: Conflict checking is now done during validation phase
-            // No need to check again after creation
 
             // Fire the created event
             Event::dispatch(new ScheduleCreated($schedule));
@@ -140,6 +139,8 @@ class ScheduleService
 
     /**
      * Get available time slots for a schedulable on a given date.
+     *
+     * @deprecated This method is deprecated. Use getBookableSlots() on the schedulable model instead.
      */
     public function getAvailableSlots(
         Model $schedulable,
@@ -149,6 +150,10 @@ class ScheduleService
         int $slotDuration = 60,
         ?int $bufferMinutes = null
     ): array {
+        trigger_error(
+            'ScheduleService::getAvailableSlots() is deprecated. Use getBookableSlots() on the schedulable model instead.',
+            E_USER_DEPRECATED
+        );
         if (method_exists($schedulable, 'getAvailableSlots')) {
             return $schedulable->getAvailableSlots($date, $startTime, $endTime, $slotDuration, $bufferMinutes);
         }
@@ -158,6 +163,8 @@ class ScheduleService
 
     /**
      * Check if a schedulable is available at a specific time.
+     *
+     * @deprecated This method is deprecated. Use isBookableAt() or getBookableSlots() on the schedulable model instead.
      */
     public function isAvailable(
         Model $schedulable,
@@ -165,6 +172,17 @@ class ScheduleService
         string $startTime,
         string $endTime
     ): bool {
+        trigger_error(
+            'ScheduleService::isAvailable() is deprecated. Use isBookableAt() or getBookableSlots() on the schedulable model instead.',
+            E_USER_DEPRECATED
+        );
+        if (method_exists($schedulable, 'isBookableAt')) {
+            $durationMinutes = \Carbon\Carbon::parse($date.' '.$endTime)
+                ->diffInMinutes(\Carbon\Carbon::parse($date.' '.$startTime));
+
+            return $schedulable->isBookableAt($date, $durationMinutes);
+        }
+
         if (method_exists($schedulable, 'isAvailableAt')) {
             return $schedulable->isAvailableAt($date, $startTime, $endTime);
         }
@@ -188,6 +206,7 @@ class ScheduleService
     }
 
     /**
+     * unused
      * Generate recurring schedule instances for a given period.
      */
     public function generateRecurringInstances(
@@ -218,6 +237,7 @@ class ScheduleService
     }
 
     /**
+     * unused
      * Check if a recurring instance should be created for the given date.
      */
     private function shouldCreateInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
@@ -225,37 +245,25 @@ class ScheduleService
         $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
 
-        switch ($frequency) {
-            case 'daily':
-                return true;
-
-            case 'weekly':
-                $allowedDays = $config['days'] ?? [];
-
-                return empty($allowedDays) || in_array(strtolower($date->format('l')), $allowedDays);
-
-            case 'monthly':
-                $dayOfMonth = $config['day_of_month'] ?? $date->day;
-
-                return $date->day === $dayOfMonth;
-
-            default:
-                return false;
+        if (! ($config instanceof FrequencyConfig)) {
+            return false;
         }
+
+        return $config->shouldCreateInstance($date);
     }
 
     /**
+     * unused
      * Get the next recurrence date.
      */
     private function getNextRecurrence(Schedule $schedule, \Carbon\CarbonInterface $current): \Carbon\CarbonInterface
     {
         $frequency = $schedule->frequency;
 
-        return match ($frequency) {
-            'daily' => $current->copy()->addDay(),
-            'weekly' => $current->copy()->addWeek(),
-            'monthly' => $current->copy()->addMonth(),
-            default => $current->copy()->addDay(),
-        };
+        if ($frequency instanceof Frequency) {
+            return $frequency->getNextRecurrence($current);
+        }
+
+        return $current->copy()->addDay();
     }
 }

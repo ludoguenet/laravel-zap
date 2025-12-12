@@ -8,7 +8,12 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Zap\Casts\SafeFrequencyCast;
+use Zap\Casts\SafeFrequencyConfigCast;
+use Zap\Data\FrequencyConfig;
+use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
+use Zap\Helper\DateHelper;
 
 /**
  * @property int $id
@@ -20,8 +25,8 @@ use Zap\Enums\ScheduleTypes;
  * @property Carbon $start_date
  * @property Carbon|null $end_date
  * @property bool $is_recurring
- * @property string|null $frequency
- * @property array|null $frequency_config
+ * @property Frequency|string|null $frequency
+ * @property FrequencyConfig|array|null $frequency_config
  * @property array|null $metadata
  * @property bool $is_active
  * @property Carbon|null $created_at
@@ -30,6 +35,15 @@ use Zap\Enums\ScheduleTypes;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, SchedulePeriod> $periods
  * @property-read Model $schedulable
  * @property-read int $total_duration
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder active(bool $active = true)
+ * @method static \Illuminate\Database\Eloquent\Builder recurring(bool $recurring = true)
+ * @method static \Illuminate\Database\Eloquent\Builder ofType(ScheduleTypes|string $type)
+ * @method static \Illuminate\Database\Eloquent\Builder availability()
+ * @method static \Illuminate\Database\Eloquent\Builder appointments()
+ * @method static \Illuminate\Database\Eloquent\Builder blocked()
+ * @method static \Illuminate\Database\Eloquent\Builder forDate(string $date)
+ * @method static \Illuminate\Database\Eloquent\Builder forDateRange(string $startDate, string $endDate)
  */
 class Schedule extends Model
 {
@@ -59,7 +73,8 @@ class Schedule extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'is_recurring' => 'boolean',
-        'frequency_config' => 'array',
+        'frequency' => SafeFrequencyCast::class,
+        'frequency_config' => SafeFrequencyConfigCast::class,
         'metadata' => 'array',
         'is_active' => 'boolean',
     ];
@@ -106,26 +121,20 @@ class Schedule extends Model
         return new Collection($models);
     }
 
-    /**
-     * Scope a query to only include active schedules.
-     */
-    public function scopeActive(Builder $query): void
+    public function scopeActive(Builder $query, bool $active = true): void
     {
-        $query->where('is_active', true);
+        $query->where('is_active', $active);
     }
 
-    /**
-     * Scope a query to only include recurring schedules.
-     */
-    public function scopeRecurring(Builder $query): void
+    public function scopeRecurring(Builder $query, bool $recurring = true): void
     {
-        $query->where('is_recurring', true);
+        $query->where('is_recurring', $recurring);
     }
 
     /**
      * Scope a query to only include schedules of a specific type.
      */
-    public function scopeOfType(Builder $query, string $type): void
+    public function scopeOfType(Builder $query, ScheduleTypes|string $type): void
     {
         $query->where('schedule_type', $type);
     }
@@ -135,7 +144,7 @@ class Schedule extends Model
      */
     public function scopeAvailability(Builder $query): void
     {
-        $query->where('schedule_type', ScheduleTypes::AVAILABILITY);
+        $query->where('schedule_type', ScheduleTypes::AVAILABILITY->value);
     }
 
     /**
@@ -143,7 +152,7 @@ class Schedule extends Model
      */
     public function scopeAppointments(Builder $query): void
     {
-        $query->where('schedule_type', ScheduleTypes::APPOINTMENT);
+        $query->where('schedule_type', ScheduleTypes::APPOINTMENT->value);
     }
 
     /**
@@ -151,7 +160,7 @@ class Schedule extends Model
      */
     public function scopeBlocked(Builder $query): void
     {
-        $query->where('schedule_type', ScheduleTypes::BLOCKED);
+        $query->where('schedule_type', ScheduleTypes::BLOCKED->value);
     }
 
     /**
@@ -162,6 +171,7 @@ class Schedule extends Model
         $checkDate = Carbon::parse($date);
         $weekday = strtolower($checkDate->format('l')); // monday, tuesday, ...
         $dayOfMonth = $checkDate->day;
+        $isDateInEvenIsoWeek = DateHelper::isDateInEvenIsoWeek($date);
 
         $query
             // date range
@@ -172,7 +182,7 @@ class Schedule extends Model
             })
 
             // recurrence logic
-            ->where(function ($q) use ($weekday, $dayOfMonth) {
+            ->where(function ($q) use ($weekday, $dayOfMonth, $isDateInEvenIsoWeek) {
 
                 //
                 // 1️⃣ NOT RECURRING — always match
@@ -184,27 +194,47 @@ class Schedule extends Model
                 //
                     ->orWhere(function ($daily) {
                         $daily->where('is_recurring', true)
-                            ->where('frequency', 'daily');
+                            ->where('frequency', Frequency::DAILY->value);
                     })
 
                 //
-                // 3️⃣ WEEKLY — match weekday inside config
+                // 3️⃣ WEEKLY | BI-WEEKLY — match weekday inside config
                 //
                     ->orWhere(function ($weekly) use ($weekday) {
                         $weekly->where('is_recurring', true)
-                            ->where('frequency', 'weekly')
+                            ->whereIn(
+                                'frequency',
+                                array_map(
+                                    fn (Frequency $frequency) => $frequency->value,
+                                    Frequency::filteredByWeekday()
+                                )
+                            )
+                            ->whereJsonContains('frequency_config->days', $weekday);
+                    })
+                    //
+                    // 4 WEEKLY_EVEN | WEEKLY_ODD — match weekday inside config
+                    //
+                    ->orWhere(function ($query) use ($weekday, $isDateInEvenIsoWeek) {
+                        $query->where('is_recurring', true)
+                            ->where('frequency', $isDateInEvenIsoWeek ? Frequency::WEEKLY_EVEN->value : Frequency::WEEKLY_ODD->value)
                             ->whereJsonContains('frequency_config->days', $weekday);
                     })
 
                 //
-                // 4️⃣ MONTHLY — match day_of_month from config
+                // 5️⃣ MONTHLY — match day_of_month from config
                 //
                     ->orWhere(function ($monthly) use ($dayOfMonth) {
                         $monthly->where('is_recurring', true)
-                            ->where('frequency', 'monthly')
+                            ->whereIn(
+                                'frequency',
+                                array_map(
+                                    fn (Frequency $frequency) => $frequency->value,
+                                    Frequency::filteredByDaysOfMonth()
+                                )
+                            )
                             ->where(function ($m) use ($dayOfMonth) {
-                                $m->whereJsonContains('frequency_config->day_of_month', $dayOfMonth)
-                                    ->orWhere('frequency_config->day_of_month', $dayOfMonth);
+                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
+                                    ->orWhere('frequency_config->days_of_month', $dayOfMonth);
                             });
                     });
             });

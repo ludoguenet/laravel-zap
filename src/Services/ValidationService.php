@@ -3,6 +3,7 @@
 namespace Zap\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use Zap\Enums\Frequency;
 use Zap\Exceptions\InvalidScheduleException;
 
 class ValidationService
@@ -602,6 +603,12 @@ class ValidationService
         $conflictService = app(\Zap\Services\ConflictDetectionService::class);
 
         foreach ($otherSchedules as $otherSchedule) {
+            // Availability schedules never conflict with anything (they allow overlaps)
+            if ($schedule->schedule_type->is(\Zap\Enums\ScheduleTypes::AVAILABILITY) ||
+                $otherSchedule->schedule_type->is(\Zap\Enums\ScheduleTypes::AVAILABILITY)) {
+                continue;
+            }
+
             if ($conflictService->schedulesOverlap($schedule, $otherSchedule, $bufferMinutes)) {
                 $conflicts[] = $otherSchedule;
             }
@@ -645,11 +652,11 @@ class ValidationService
 
             // Add details about the conflict
             if ($conflict->is_recurring) {
-                $frequency = ucfirst($conflict->frequency ?? 'recurring');
+                $frequency = ucfirst((is_object($conflict->frequency) ? $conflict->frequency->value : $conflict->frequency) ?? 'recurring');
                 $message .= " The conflicting schedule is a {$frequency} schedule";
 
-                if ($conflict->frequency === 'weekly' && ! empty($conflict->frequency_config['days'])) {
-                    $days = implode(', ', array_map('ucfirst', $conflict->frequency_config['days']));
+                if (in_array($conflict->frequency, Frequency::weeklyFrequencies()) && ! empty($conflict->frequency_config->days)) {
+                    $days = implode(', ', array_map('ucfirst', $conflict->frequency_config->days));
                     $message .= " on {$days}";
                 }
 
@@ -665,11 +672,11 @@ class ValidationService
                 $message .= "\n• {$conflictName}";
 
                 if ($conflict->is_recurring) {
-                    $frequency = ucfirst($conflict->frequency ?? 'recurring');
+                    $frequency = ucfirst((is_object($conflict->frequency) ? $conflict->frequency->value : $conflict->frequency) ?? 'recurring');
                     $message .= " ({$frequency}";
 
-                    if ($conflict->frequency === 'weekly' && ! empty($conflict->frequency_config['days'])) {
-                        $days = implode(', ', array_map('ucfirst', $conflict->frequency_config['days']));
+                    if (in_array($conflict->frequency, Frequency::weeklyFrequencies()) && ! empty($conflict->frequency_config->days)) {
+                        $days = implode(', ', array_map('ucfirst', $conflict->frequency_config->days));
                         $message .= " - {$days}";
                     }
 
