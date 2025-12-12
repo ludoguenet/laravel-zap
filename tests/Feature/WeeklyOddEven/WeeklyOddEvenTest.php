@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Carbon;
+use Zap\Enums\Frequency;
 use Zap\Facades\Zap;
 use Zap\Helper\DateHelper;
 
