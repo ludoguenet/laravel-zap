@@ -14,7 +14,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->named('Weekly-Even Appointment')
             ->appointment()
             ->from('2025-01-01')
-            ->to('2025-12-01')
+            ->to('2025-01-31')
             ->addPeriod('09:00', '10:00')
             ->weeklyEven(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
             ->save();
@@ -38,7 +38,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->named('Weekly-Odd Appointment')
             ->appointment()
             ->from('2025-01-01')
-            ->to('2025-12-01')
+            ->to('2025-01-31')
             ->addPeriod('09:00', '10:00')
             ->weeklyOdd(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
             ->save();
@@ -62,7 +62,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->named('Weekly-Odd Appointment')
             ->appointment()
             ->from('2025-01-01')
-            ->to('2025-12-01')
+            ->to('2025-01-31')
             ->addPeriod('09:00', '10:00')
             ->weeklyOdd(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
             ->save();
@@ -85,7 +85,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
         Zap::for($user)
             ->appointment()
             ->from('2025-01-01')
-            ->to('2025-12-01')
+            ->to('2025-01-31')
             ->addPeriod('09:00', '10:00')
             ->weeklyEven(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
             ->save();
@@ -109,7 +109,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->named('Weekly-Even Meeting')
             ->appointment()
             ->from('2025-01-01')
-            ->to('2025-12-01')
+            ->to('2025-01-31')
             ->addPeriod('09:00', '10:00')
             ->weeklyEven(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
             ->save();
@@ -153,7 +153,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->named('Weekly-Odd Meeting')
             ->appointment()
             ->from('2025-01-01')
-            ->to('2025-12-01')
+            ->to('2025-01-31')
             ->addPeriod('09:00', '10:00')
             ->weeklyOdd(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
             ->save();
