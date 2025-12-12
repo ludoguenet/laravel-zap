@@ -114,8 +114,19 @@ $schedule->daily()->from('2025-01-01')->to('2025-12-31');
 $schedule->weekly(['monday', 'wednesday', 'friday'])->forYear(2025);
 
 // Weekly with time period (convenience method - combines weekly() and addPeriod())
-$schedule->weekDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')
-    ->forYear(2025);
+$schedule->weekDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->forYear(2025);
+
+// Weekly odd (specific days) – runs only on odd-numbered weeks
+$schedule->weeklyOdd(['monday', 'wednesday', 'friday'])->forYear(2025);
+
+// Weekly odd with time period (convenience method - combines weeklyOdd() and addPeriod())
+$schedule->weekOddDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->forYear(2025)
+
+// Weekly even (specific days) – runs only on even-numbered weeks
+$schedule->weeklyEven(['monday', 'wednesday', 'friday'])->forYear(2025);
+
+// Weekly even with time period (convenience method - combines weeklyEven() and addPeriod())
+$schedule->weekEvenDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->forYear(2025)
 
 // Bi-weekly (week of the start date by default, optional anchor)
 $schedule->biweekly(['tuesday', 'thursday'])->from('2025-01-07')->to('2025-03-31');
@@ -140,6 +151,7 @@ $schedule->annually(['days_of_month' => [1, 15], 'start_month' => 4])->from('202
 
 ```php
 $schedule->from('2025-01-15');                          // Single date
+$schedule->on('2025-01-15');                            // Alias (alternative syntax) for from()
 $schedule->from('2025-01-01')->to('2025-12-31');        // Date range
 $schedule->between('2025-01-01', '2025-12-31');         // Alternative syntax
 $schedule->forYear(2025);                               // Entire year shortcut
@@ -164,6 +176,9 @@ $schedule->addPeriod('14:00', '17:00');
 // Check if there is at least one bookable slot on the day
 $isBookable = $doctor->isBookableAt('2025-01-15', 60);
 
+// Check if a specific time range is bookable
+$isBookable = $doctor->isBookableAtTime('2025-01-15', '9:00', '9:30');
+
 // Get bookable slots
 $slots = $doctor->getBookableSlots('2025-01-15', 60, 15);
 
@@ -186,7 +201,7 @@ $schedule->isAppointment();
 $schedule->isBlocked();
 ```
 
-> `isAvailableAt()` is deprecated in favor of `isBookableAt()` and `getBookableSlots()`. Use the bookable APIs for all new code.
+> `isAvailableAt()` is deprecated in favor of `isBookableAt()` `isBookableAtTime()` and `getBookableSlots()`. Use the bookable APIs for all new code.
 
 ---
 
