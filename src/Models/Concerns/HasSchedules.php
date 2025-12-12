@@ -8,7 +8,6 @@ use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
 use Zap\Data\FrequencyConfig;
 use Zap\Enums\ScheduleTypes;
-use Zap\Helper\DateHelper;
 use Zap\Models\Schedule;
 use Zap\Services\ConflictDetectionService;
 
@@ -438,11 +437,10 @@ trait HasSchedules
      * 2. The requested time range must fit entirely inside one of the model's
      *    bookable slots for the given date.
      *
-     * @param string $date       The date to check (Y-m-d)
-     * @param string $startTime  Requested start time (HH:MM)
-     * @param string $endTime    Requested end time (HH:MM)
-     * @param Collection|null $schedules Optional preloaded schedules
-     *
+     * @param  string  $date  The date to check (Y-m-d)
+     * @param  string  $startTime  Requested start time (HH:MM)
+     * @param  string  $endTime  Requested end time (HH:MM)
+     * @param  Collection|null  $schedules  Optional preloaded schedules
      * @return bool True if bookable, false otherwise
      */
     public function isBookableAtTime(string $date, string $startTime, string $endTime, ?Collection $schedules = null): bool
@@ -472,10 +470,10 @@ trait HasSchedules
             }
 
             $slotStart = Carbon::parse($slot['start_time']);
-            $slotEnd   = Carbon::parse($slot['end_time']);
+            $slotEnd = Carbon::parse($slot['end_time']);
 
             $requestedStart = Carbon::parse($startTime);
-            $requestedEnd   = Carbon::parse($endTime);
+            $requestedEnd = Carbon::parse($endTime);
 
             // The requested time range must be fully contained within the slot
             if ($requestedStart >= $slotStart && $requestedEnd <= $slotEnd) {

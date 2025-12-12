@@ -121,7 +121,6 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->addPeriod('10:30', '11:30')
             ->save();
 
-
         // Create a new appointment schedule that overlaps only Meeting 2.
         // Because 'Weekly-Even Meeting' is in even weeks
         $newSchedule = new Schedule([
@@ -144,7 +143,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
         $conflicts = Zap::findConflicts($newSchedule);
 
         expect($conflicts)->toHaveCount(1)
-            ->and($conflicts[0]->name)->toBe('Meeting 2');;
+            ->and($conflicts[0]->name)->toBe('Meeting 2');
     });
 
     it('weekly odd - finds all conflicting schedules', function () {
@@ -165,7 +164,6 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->from('2025-01-06')
             ->addPeriod('10:30', '11:30')
             ->save();
-
 
         // Create a new appointment schedule that overlaps only Meeting 2.
         // Because 'Weekly-Odd Meeting' is in odd weeks
@@ -189,9 +187,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
         $conflicts = Zap::findConflicts($newSchedule);
 
         expect($conflicts)->toHaveCount(1)
-            ->and($conflicts[0]->name)->toBe('Meeting 2');;
+            ->and($conflicts[0]->name)->toBe('Meeting 2');
     });
-
-
 
 });

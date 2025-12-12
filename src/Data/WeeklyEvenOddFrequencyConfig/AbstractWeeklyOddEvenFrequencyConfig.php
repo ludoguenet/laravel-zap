@@ -17,7 +17,6 @@ abstract class AbstractWeeklyOddEvenFrequencyConfig extends FrequencyConfig
 
     abstract protected function isWeekTypeMatch(\Carbon\CarbonInterface $date): bool;
 
-
     public function shouldCreateInstance(\Carbon\CarbonInterface $date): bool
     {
         return empty($this->days) || in_array(strtolower($date->format('l')), $this->days);
@@ -57,5 +56,4 @@ abstract class AbstractWeeklyOddEvenFrequencyConfig extends FrequencyConfig
 
         return $next;
     }
-
 }

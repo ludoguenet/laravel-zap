@@ -1,11 +1,8 @@
 <?php
 
 use Illuminate\Support\Carbon;
-use Zap\Enums\ScheduleTypes;
-use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
 use Zap\Helper\DateHelper;
-use Zap\Models\Schedule;
 
 describe('Weekly Odd/Even ', function () {
 
@@ -204,7 +201,7 @@ describe('Weekly Odd/Even ', function () {
             'end_time' => '10:00',
             'is_available' => true,
             'buffer_minutes' => 10,
-            'date' => '2025-01-06'
+            'date' => '2025-01-06',
         ]);
 
         //
@@ -222,7 +219,7 @@ describe('Weekly Odd/Even ', function () {
             'end_time' => '10:50',
             'is_available' => true,
             'buffer_minutes' => 10,
-            'date' => '2025-01-06'
+            'date' => '2025-01-06',
         ]);
 
         //
@@ -344,6 +341,5 @@ describe('Weekly Odd/Even ', function () {
         expect(DateHelper::isDateInEvenIsoWeek($nextEvenFromOdd))->toBeTrue();
         expect($dateOdd->diffInWeeks($nextEvenFromOdd))->toBe(1.0);
     });
-
 
 });

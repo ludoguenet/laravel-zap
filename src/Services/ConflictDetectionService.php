@@ -2,12 +2,10 @@
 
 namespace Zap\Services;
 
-use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Zap\Data\FrequencyConfig;
 use Zap\Enums\ScheduleTypes;
-use Zap\Helper\DateHelper;
 use Zap\Models\Schedule;
 use Zap\Models\SchedulePeriod;
 

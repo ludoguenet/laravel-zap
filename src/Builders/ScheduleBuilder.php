@@ -153,11 +153,17 @@ class ScheduleBuilder
     }
 
     /**
-     * @param Frequency $frequency
-     * @param array $days
-     * @param string|null $startTime
-     * @param string|null $endTime
-     * @return self
+     * Internal helper to configure a weekly frequency for the schedule.
+     *
+     * This method centralizes the logic for setting weekly recurring schedules,
+     * including standard weeks, odd weeks, and time periods.
+     * It prevents code duplication across public methods like weekly(), weekDays(), weeklyOdd() and weekOddDays()
+     *
+     * @param  Frequency  $frequency  The frequency type (WEEKLY, WEEKLY_ODD, etc.)
+     * @param  array  $days  Array of days the schedule applies to
+     * @param  string|null  $startTime  Optional start time for the daily period
+     * @param  string|null  $endTime  Optional end time for the daily period
+     * @return self Returns the current instance for method chaining
      */
     private function setWeeklyFrequency(Frequency $frequency, array $days, ?string $startTime = null, ?string $endTime = null): self
     {
@@ -176,13 +182,13 @@ class ScheduleBuilder
         return $this;
     }
 
-
     /**
      * Set schedule as weekly recurring.
      */
     public function weekly(array $days = []): self
     {
         $this->setWeeklyFrequency(Frequency::WEEKLY, $days);
+
         return $this;
     }
 
@@ -192,6 +198,7 @@ class ScheduleBuilder
     public function weekDays(array $days, string $startTime, string $endTime): self
     {
         $this->setWeeklyFrequency(Frequency::WEEKLY, $days, $startTime, $endTime);
+
         return $this;
     }
 
@@ -201,6 +208,7 @@ class ScheduleBuilder
     public function weeklyOdd(array $days = []): self
     {
         $this->setWeeklyFrequency(Frequency::WEEKLY_ODD, $days);
+
         return $this;
     }
 
@@ -210,6 +218,7 @@ class ScheduleBuilder
     public function weekOddDays(array $days, string $startTime, string $endTime): self
     {
         $this->setWeeklyFrequency(Frequency::WEEKLY_ODD, $days, $startTime, $endTime);
+
         return $this;
     }
 
@@ -219,6 +228,7 @@ class ScheduleBuilder
     public function weeklyEven(array $days = []): self
     {
         $this->setWeeklyFrequency(Frequency::WEEKLY_EVEN, $days);
+
         return $this;
     }
 
@@ -228,6 +238,7 @@ class ScheduleBuilder
     public function weekEvenDays(array $days, string $startTime, string $endTime): self
     {
         $this->setWeeklyFrequency(Frequency::WEEKLY_EVEN, $days, $startTime, $endTime);
+
         return $this;
     }
 

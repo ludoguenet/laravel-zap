@@ -2,7 +2,6 @@
 
 namespace Zap\Data\WeeklyEvenOddFrequencyConfig;
 
-use Zap\Data\FrequencyConfig;
 use Zap\Helper\DateHelper;
 
 /**
@@ -10,7 +9,6 @@ use Zap\Helper\DateHelper;
  */
 class WeeklyEvenFrequencyConfig extends AbstractWeeklyOddEvenFrequencyConfig
 {
-
     public static function fromArray(array $data): self
     {
         if (! array_key_exists('days', $data)) {
@@ -26,5 +24,4 @@ class WeeklyEvenFrequencyConfig extends AbstractWeeklyOddEvenFrequencyConfig
     {
         return DateHelper::isDateInEvenIsoWeek($date);
     }
-
 }
