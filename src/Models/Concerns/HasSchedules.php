@@ -3,6 +3,7 @@
 namespace Zap\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
 use Zap\Data\FrequencyConfig;
@@ -420,6 +421,62 @@ trait HasSchedules
 
         foreach ($slots as $slot) {
             if (! empty($slot['is_available'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if the model is bookable at a specific date and time range.
+     *
+     * This method checks two conditions:
+     * 1. The time range must not be blocked by any active schedules
+     *    (CUSTOM schedules or schedules that prevent overlaps).
+     * 2. The requested time range must fit entirely inside one of the model's
+     *    bookable slots for the given date.
+     *
+     * @param  string  $date  The date to check (Y-m-d)
+     * @param  string  $startTime  Requested start time (HH:MM)
+     * @param  string  $endTime  Requested end time (HH:MM)
+     * @param  Collection|null  $schedules  Optional preloaded schedules
+     * @return bool True if bookable, false otherwise
+     */
+    public function isBookableAtTime(string $date, string $startTime, string $endTime, ?Collection $schedules = null): bool
+    {
+        // Load active schedules for this model on the given date
+        $schedules = $schedules ?? $this->schedules()
+            ->active()
+            ->forDate($date)
+            ->with('periods')
+            ->get();
+
+        // Retrieve all bookable slots generated for the given date
+        $bookableSlots = $this->getBookableSlots($date);
+
+        // Check if any schedule blocks the requested time range
+        foreach ($schedules as $schedule) {
+            $shouldBlock = $schedule->schedule_type->is(ScheduleTypes::CUSTOM) || $schedule->preventsOverlaps();
+            if ($shouldBlock && $this->scheduleBlocksTime($schedule, $date, $startTime, $endTime)) {
+                return false;
+            }
+        }
+
+        // Verify that the requested time fits within an available bookable slot
+        foreach ($bookableSlots as $slot) {
+            if (empty($slot['is_available'])) {
+                continue; // Skip unavailable slots
+            }
+
+            $slotStart = Carbon::parse($slot['start_time']);
+            $slotEnd = Carbon::parse($slot['end_time']);
+
+            $requestedStart = Carbon::parse($startTime);
+            $requestedEnd = Carbon::parse($endTime);
+
+            // The requested time range must be fully contained within the slot
+            if ($requestedStart >= $slotStart && $requestedEnd <= $slotEnd) {
                 return true;
             }
         }

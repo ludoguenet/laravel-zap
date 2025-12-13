@@ -13,7 +13,6 @@ use Zap\Data\FrequencyConfig;
 use Zap\Data\MonthlyFrequencyConfig;
 use Zap\Data\QuarterlyFrequencyConfig;
 use Zap\Data\SemiAnnuallyFrequencyConfig;
-use Zap\Data\WeeklyFrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
 use Zap\Models\Schedule;
@@ -154,15 +153,41 @@ class ScheduleBuilder
     }
 
     /**
+     * Internal helper to configure a weekly frequency for the schedule.
+     *
+     * This method centralizes the logic for setting weekly recurring schedules,
+     * including standard weeks, odd weeks, and time periods.
+     * It prevents code duplication across public methods like weekly(), weekDays(), weeklyOdd() and weekOddDays()
+     *
+     * @param  Frequency  $frequency  The frequency type (WEEKLY, WEEKLY_ODD, etc.)
+     * @param  array  $days  Array of days the schedule applies to
+     * @param  string|null  $startTime  Optional start time for the daily period
+     * @param  string|null  $endTime  Optional end time for the daily period
+     * @return self Returns the current instance for method chaining
+     */
+    private function setWeeklyFrequency(Frequency $frequency, array $days, ?string $startTime = null, ?string $endTime = null): self
+    {
+        $this->attributes['is_recurring'] = true;
+        $this->attributes['frequency'] = $frequency;
+
+        $configClass = app($frequency->configClass());
+        $this->attributes['frequency_config'] = $configClass->fromArray([
+            'days' => $days,
+        ]);
+
+        if ($startTime !== null && $endTime !== null) {
+            $this->addPeriod($startTime, $endTime, null);
+        }
+
+        return $this;
+    }
+
+    /**
      * Set schedule as weekly recurring.
      */
     public function weekly(array $days = []): self
     {
-        $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = Frequency::WEEKLY;
-        $this->attributes['frequency_config'] = WeeklyFrequencyConfig::fromArray([
-            'days' => $days,
-        ]);
+        $this->setWeeklyFrequency(Frequency::WEEKLY, $days);
 
         return $this;
     }
@@ -172,13 +197,47 @@ class ScheduleBuilder
      */
     public function weekDays(array $days, string $startTime, string $endTime): self
     {
-        $this->attributes['is_recurring'] = true;
-        $this->attributes['frequency'] = Frequency::WEEKLY;
-        $this->attributes['frequency_config'] = WeeklyFrequencyConfig::fromArray([
-            'days' => $days,
-        ]);
+        $this->setWeeklyFrequency(Frequency::WEEKLY, $days, $startTime, $endTime);
 
-        $this->addPeriod($startTime, $endTime, null);
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring on odd weeks.
+     */
+    public function weeklyOdd(array $days = []): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY_ODD, $days);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring on odd weeks and add a time period.
+     */
+    public function weekOddDays(array $days, string $startTime, string $endTime): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY_ODD, $days, $startTime, $endTime);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring on even weeks.
+     */
+    public function weeklyEven(array $days = []): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY_EVEN, $days);
+
+        return $this;
+    }
+
+    /**
+     * Set schedule as weekly recurring on even weeks and add a time period.
+     */
+    public function weekEvenDays(array $days, string $startTime, string $endTime): self
+    {
+        $this->setWeeklyFrequency(Frequency::WEEKLY_EVEN, $days, $startTime, $endTime);
 
         return $this;
     }
@@ -309,6 +368,14 @@ class ScheduleBuilder
     public function noOverlap(): self
     {
         return $this->withRule('no_overlap');
+    }
+
+    /**
+     * Add allow overlap rule.
+     */
+    public function allowOverlap(): self
+    {
+        return $this->withRule('no_overlap', ['enabled' => false]);
     }
 
     /**

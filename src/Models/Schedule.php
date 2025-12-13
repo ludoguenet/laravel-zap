@@ -13,6 +13,7 @@ use Zap\Casts\SafeFrequencyConfigCast;
 use Zap\Data\FrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Enums\ScheduleTypes;
+use Zap\Helper\DateHelper;
 
 /**
  * @property int $id
@@ -170,6 +171,7 @@ class Schedule extends Model
         $checkDate = Carbon::parse($date);
         $weekday = strtolower($checkDate->format('l')); // monday, tuesday, ...
         $dayOfMonth = $checkDate->day;
+        $isDateInEvenIsoWeek = DateHelper::isDateInEvenIsoWeek($date);
 
         $query
             // date range
@@ -180,7 +182,7 @@ class Schedule extends Model
             })
 
             // recurrence logic
-            ->where(function ($q) use ($weekday, $dayOfMonth) {
+            ->where(function ($q) use ($weekday, $dayOfMonth, $isDateInEvenIsoWeek) {
 
                 //
                 // 1️⃣ NOT RECURRING — always match
@@ -207,6 +209,14 @@ class Schedule extends Model
                                     Frequency::filteredByWeekday()
                                 )
                             )
+                            ->whereJsonContains('frequency_config->days', $weekday);
+                    })
+                    //
+                    // 4 WEEKLY_EVEN | WEEKLY_ODD — match weekday inside config
+                    //
+                    ->orWhere(function ($query) use ($weekday, $isDateInEvenIsoWeek) {
+                        $query->where('is_recurring', true)
+                            ->where('frequency', $isDateInEvenIsoWeek ? Frequency::WEEKLY_EVEN->value : Frequency::WEEKLY_ODD->value)
                             ->whereJsonContains('frequency_config->days', $weekday);
                     })
 

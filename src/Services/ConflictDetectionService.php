@@ -258,7 +258,7 @@ class ConflictDetectionService
     /**
      * Check if a recurring instance should be created for the given date.
      */
-    protected function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    public function shouldCreateRecurringInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
     {
         $config = $schedule->frequency_config ?? [];
 

@@ -1,34 +1,21 @@
 <?php
 
-namespace Zap\Data;
+namespace Zap\Data\WeeklyEvenOddFrequencyConfig;
 
+use Zap\Data\FrequencyConfig;
 use Zap\Helper\DateHelper;
 use Zap\Models\Schedule;
 
 /**
  * @property-read list<string> $daysOfWeek
  */
-class WeeklyFrequencyConfig extends FrequencyConfig
+abstract class AbstractWeeklyOddEvenFrequencyConfig extends FrequencyConfig
 {
     public function __construct(
         public array $days = []
     ) {}
 
-    public static function fromArray(array $data): self
-    {
-        if (! array_key_exists('days', $data)) {
-            throw new \InvalidArgumentException("Missing 'days' key in WeeklyFrequencyConfig data array.");
-        }
-
-        return new self(
-            days: $data['days'] ?? []
-        );
-    }
-
-    public function getNextRecurrence(\Carbon\CarbonInterface $current): \Carbon\CarbonInterface
-    {
-        return $this->getNextWeeklyOccurrence($current, $this->days);
-    }
+    abstract protected function isWeekTypeMatch(\Carbon\CarbonInterface $date): bool;
 
     public function shouldCreateInstance(\Carbon\CarbonInterface $date): bool
     {
@@ -40,21 +27,29 @@ class WeeklyFrequencyConfig extends FrequencyConfig
         $allowedDays = ! empty($this->days) ? $this->days : ['monday'];
         $allowedDayNumbers = DateHelper::getDayNumbers($allowedDays);
 
-        return in_array($date->dayOfWeek, $allowedDayNumbers);
+        return $this->isWeekTypeMatch($date) && in_array($date->dayOfWeek, $allowedDayNumbers);
+    }
+
+    public function getNextRecurrence(\Carbon\CarbonInterface $current): \Carbon\CarbonInterface
+    {
+        return $this->getNextWeeklyOccurrence($current, $this->days);
     }
 
     protected function getNextWeeklyOccurrence(\Carbon\CarbonInterface $current, array $allowedDays): \Carbon\CarbonInterface
     {
         $next = $current->copy()->addDay();
-
         $allowedDayNumbers = DateHelper::getDayNumbers($allowedDays);
 
-        // Find the next allowed day
-        while (! in_array($next->dayOfWeek, $allowedDayNumbers)) {
-            $next = $next->addDay();
+        while (true) {
+            $isAllowedDay = in_array($next->dayOfWeek, $allowedDayNumbers);
 
-            // Prevent infinite loop
-            if ($next->diffInDays($current) > 7) {
+            if ($this->isWeekTypeMatch($next) && $isAllowedDay) {
+                break;
+            }
+
+            $next->addDay();
+
+            if ($next->diffInDays($current) > 14) {
                 break;
             }
         }
