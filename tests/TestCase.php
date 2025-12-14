@@ -65,6 +65,9 @@ abstract class TestCase extends Orchestra
             'cache' => [
                 'enabled' => false,
             ],
+            'availability_precedence' => [
+                'single_date_over_range' => false, // Default: backward compatible behavior
+            ],
         ]);
 
         // Database setup

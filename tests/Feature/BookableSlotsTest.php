@@ -227,6 +227,98 @@ it('handles availability schedules outside date range', function () {
     expect($slots)->toBeEmpty();
 });
 
+it('gives precedence to single-date schedule over range schedule when precedence is enabled', function () {
+    // Enable single-date precedence
+    config(['zap.availability_precedence.single_date_over_range' => true]);
+
+    $user = createUser();
+
+    // Create a range schedule (both start_date and end_date set) with daily recurrence
+    // so it generates periods for all dates in the range
+    $rangeSchedule = Zap::for($user)
+        ->availability()
+        ->from('2025-01-01')
+        ->to('2025-01-31')
+        ->daily()
+        ->addPeriod('09:00', '17:00')
+        ->save();
+
+    // Create a single-date schedule (only start_date, no end_date) that falls within the range
+    $singleDateSchedule = Zap::for($user)
+        ->availability()
+        ->from('2025-01-15')
+        ->addPeriod('10:00', '14:00')
+        ->save();
+
+    // For the date that matches the single-date schedule, it should take precedence
+    $slots = $user->getBookableSlots('2025-01-15', 60);
+
+    // Should only have slots from the single-date schedule (10:00-14:00), not the range schedule (09:00-17:00)
+    expect($slots)->not()->toBeEmpty();
+
+    $slotTimes = collect($slots)->pluck('start_time')->unique()->sort()->values();
+
+    // Should start at 10:00 (single-date schedule), not 09:00 (range schedule)
+    expect($slotTimes->first())->toBe('10:00');
+
+    // Should end at 13:00 (last 60-minute slot that fits in 10:00-14:00)
+    expect($slotTimes->last())->toBe('13:00');
+
+    // Should not have 09:00 slot from range schedule
+    expect($slotTimes->contains('09:00'))->toBeFalse();
+
+    // Should not have 16:00 slot from range schedule
+    expect($slotTimes->contains('16:00'))->toBeFalse();
+
+    // For a date within the range but not matching the single-date schedule, range schedule should apply
+    $otherDateSlots = $user->getBookableSlots('2025-01-10', 60);
+    expect($otherDateSlots)->not()->toBeEmpty();
+
+    $otherSlotTimes = collect($otherDateSlots)->pluck('start_time')->unique()->sort()->values();
+    // Should start at 09:00 (range schedule)
+    expect($otherSlotTimes->first())->toBe('09:00');
+});
+
+it('includes both single-date and range schedules when precedence is disabled (backward compatible)', function () {
+    // Disable single-date precedence (default behavior)
+    config(['zap.availability_precedence.single_date_over_range' => false]);
+
+    $user = createUser();
+
+    // Create a range schedule (both start_date and end_date set) with daily recurrence
+    $rangeSchedule = Zap::for($user)
+        ->availability()
+        ->from('2025-01-01')
+        ->to('2025-01-31')
+        ->daily()
+        ->addPeriod('09:00', '17:00')
+        ->save();
+
+    // Create a single-date schedule (only start_date, no end_date) that falls within the range
+    $singleDateSchedule = Zap::for($user)
+        ->availability()
+        ->from('2025-01-15')
+        ->addPeriod('10:00', '14:00')
+        ->save();
+
+    // For the date that matches the single-date schedule, both schedules should be included
+    $slots = $user->getBookableSlots('2025-01-15', 60);
+
+    expect($slots)->not()->toBeEmpty();
+
+    $slotTimes = collect($slots)->pluck('start_time')->unique()->sort()->values();
+
+    // Should include slots from both schedules
+    // Should start at 09:00 (range schedule)
+    expect($slotTimes->first())->toBe('09:00');
+
+    // Should include 10:00 from single-date schedule
+    expect($slotTimes->contains('10:00'))->toBeTrue();
+
+    // Should include 16:00 from range schedule
+    expect($slotTimes->contains('16:00'))->toBeTrue();
+});
+
 it('supports extended recurring frequencies when building bookable slots', function () {
     $user = createUser();
 
