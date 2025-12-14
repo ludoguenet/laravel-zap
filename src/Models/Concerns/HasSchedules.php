@@ -443,10 +443,47 @@ trait HasSchedules
             ->with('periods')
             ->get();
 
+        // Separate schedules into range schedules and single-date schedules
+        $rangeSchedules = $availabilitySchedules->filter(function ($schedule) {
+            return ! is_null($schedule->end_date);
+        });
+
+        $singleDateSchedules = $availabilitySchedules->filter(function ($schedule) {
+            return is_null($schedule->end_date);
+        });
+
+        // Identify range schedules that should be excluded because a single-date schedule takes precedence
+        $excludedRangeScheduleIds = collect();
+
+        $singleDateSchedules->each(function ($singleDateSchedule) use ($rangeSchedules, $checkDate, &$excludedRangeScheduleIds) {
+            $singleDate = $singleDateSchedule->start_date;
+
+            // Only apply precedence if we're checking the date that matches the single-date schedule
+            if (! $singleDate->eq($checkDate)) {
+                return;
+            }
+
+            $rangeSchedules->each(function ($rangeSchedule) use ($singleDate, &$excludedRangeScheduleIds) {
+                // Check if single date falls within the range schedule's date range
+                if (
+                    $singleDate->greaterThanOrEqualTo($rangeSchedule->start_date) &&
+                    $singleDate->lessThanOrEqualTo($rangeSchedule->end_date)
+                ) {
+                    // Single-date schedule takes precedence, exclude the range schedule
+                    $excludedRangeScheduleIds->push($rangeSchedule->id);
+                }
+            });
+        });
+
         $allPeriods = collect();
 
-        $availabilitySchedules->each(function ($schedule) use ($date, $checkDate, &$allPeriods) {
+        $availabilitySchedules->each(function ($schedule) use ($date, $checkDate, $excludedRangeScheduleIds, &$allPeriods) {
             if (! $schedule->isActiveOn($date)) {
+                return;
+            }
+
+            // Skip range schedules that are excluded due to single-date precedence
+            if ($excludedRangeScheduleIds->contains($schedule->id)) {
                 return;
             }
 
