@@ -90,4 +90,22 @@ return [
         'allow_overlapping_periods' => false, // Allow periods to overlap within same schedule
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Availability Precedence
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, single-date schedules (only start_date, no end_date) will
+    | take precedence over range schedules (both start_date and end_date) when
+    | the single date falls within the range schedule's date range.
+    |
+    | Default: false (backward compatible - all schedules are considered)
+    | Set to true to enable precedence: single-date schedules override range
+    | schedules for their specific date.
+    |
+    */
+    'availability_precedence' => [
+        'single_date_over_range' => false, // Enable single-date precedence over range schedules
+    ],
+
 ];
