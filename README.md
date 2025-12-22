@@ -4,10 +4,11 @@
 
 **Flexible schedule management for modern Laravel applications**
 
-[![PHP Version](https://img.shields.io/badge/PHP-%E2%89%A48.5-777BB4?style=flat&logo=php)](https://www.php.net/)
-[![Laravel Version](https://img.shields.io/badge/Laravel-%E2%89%A412.0-FF2D20?style=flat&logo=laravel)](https://laravel.com)
-[![License](http://poser.pugx.org/laraveljutsu/zap/license)](https://packagist.org/packages/laraveljutsu/zap)
-[![Total Downloads](http://poser.pugx.org/laraveljutsu/zap/downloads)](https://packagist.org/packages/laraveljutsu/zap)
+[![PHP Version](https://img.shields.io/badge/PHP-%E2%89%A48.5-777BB4?style=for-the-badge&logo=php)](https://www.php.net/)
+[![Laravel Version](https://img.shields.io/badge/Laravel-%E2%89%A412.0-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
+[![License](http://poser.pugx.org/laraveljutsu/zap/license?style=for-the-badge)](https://packagist.org/packages/laraveljutsu/zap)
+[![Total Downloads](http://poser.pugx.org/laraveljutsu/zap/downloads?style=for-the-badge)](https://packagist.org/packages/laraveljutsu/zap)
+[![Why PHP](https://img.shields.io/badge/Why_PHP-in_2026-7A86E8?style=for-the-badge&labelColor=18181b)](https://whyphp.dev)
 
 [Website](https://ludovicguenet.dev) • [Documentation](https://laravel-zap.com) • [Support](mailto:ludo@epekta.com)
 
@@ -17,9 +18,13 @@
 
 ## 🎯 What is Zap?
 
-A comprehensive calendar and scheduling system for Laravel. Manage availabilities, appointments, blocked times, and custom schedules for any resource—doctors, meeting rooms, employees, and more.
+Zap is a comprehensive calendar and scheduling system for Laravel. Manage availabilities, appointments, blocked times, and custom schedules for any resource—doctors, meeting rooms, employees, and more.
 
-**Perfect for:** appointment booking systems • resource scheduling • shift management • calendar applications
+**Perfect for:**
+- 📅 Appointment booking systems
+- 🏥 Healthcare resource management
+- 👔 Employee shift scheduling
+- 🏢 Shared office space bookings
 
 ---
 
@@ -33,7 +38,9 @@ php artisan vendor:publish --tag=zap-migrations
 php artisan migrate
 ```
 
-Add the trait to your schedulable models:
+### Setup Your Models
+
+Add the `HasSchedules` trait to any Eloquent model you want to make schedulable:
 
 ```php
 use Zap\Models\Concerns\HasSchedules;
@@ -48,6 +55,8 @@ class Doctor extends Model
 
 ## 🧩 Core Concepts
 
+Zap uses four schedule types to model different scenarios:
+
 | Type | Purpose | Overlap Behavior |
 |------|---------|------------------|
 | **Availability** | Define when resources can be booked | ✅ Allows overlaps |
@@ -58,6 +67,8 @@ class Doctor extends Model
 ---
 
 ## 🚀 Quick Start
+
+Here's a complete example of setting up a doctor's schedule:
 
 ```php
 use Zap\Facades\Zap;
@@ -104,7 +115,9 @@ $nextSlot = $doctor->getNextBookableSlot('2025-01-15', 60, 15);
 
 ## 📅 Schedule Patterns
 
-### Recurrence
+### Recurrence Patterns
+
+Zap supports various recurrence patterns for flexible scheduling:
 
 ```php
 // Daily
@@ -113,20 +126,20 @@ $schedule->daily()->from('2025-01-01')->to('2025-12-31');
 // Weekly (specific days)
 $schedule->weekly(['monday', 'wednesday', 'friday'])->forYear(2025);
 
-// Weekly with time period (convenience method - combines weekly() and addPeriod())
+// Weekly with time period (convenience method)
 $schedule->weekDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->forYear(2025);
 
-// Weekly odd (specific days) – runs only on odd-numbered weeks
+// Weekly odd (runs only on odd-numbered weeks)
 $schedule->weeklyOdd(['monday', 'wednesday', 'friday'])->forYear(2025);
 
-// Weekly odd with time period (convenience method - combines weeklyOdd() and addPeriod())
-$schedule->weekOddDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->forYear(2025)
+// Weekly odd with time period (convenience method)
+$schedule->weekOddDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->forYear(2025);
 
-// Weekly even (specific days) – runs only on even-numbered weeks
+// Weekly even (runs only on even-numbered weeks)
 $schedule->weeklyEven(['monday', 'wednesday', 'friday'])->forYear(2025);
 
-// Weekly even with time period (convenience method - combines weeklyEven() and addPeriod())
-$schedule->weekEvenDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->forYear(2025)
+// Weekly even with time period (convenience method)
+$schedule->weekEvenDays(['monday', 'wednesday', 'friday'], '09:00', '17:00')->forYear(2025);
 
 // Bi-weekly (week of the start date by default, optional anchor)
 $schedule->biweekly(['tuesday', 'thursday'])->from('2025-01-07')->to('2025-03-31');
@@ -135,29 +148,37 @@ $schedule->biweekly(['tuesday', 'thursday'])->from('2025-01-07')->to('2025-03-31
 $schedule->monthly(['days_of_month' => [1, 15]])->forYear(2025);
 
 // Bi-monthly (multiple days, optional start_month anchor)
-$schedule->bimonthly(['days_of_month' => [5, 20], 'start_month' => 2])->from('2025-01-05')->to('2025-06-30');
+$schedule->bimonthly(['days_of_month' => [5, 20], 'start_month' => 2])
+    ->from('2025-01-05')->to('2025-06-30');
 
 // Quarterly (multiple days, optional start_month anchor)
-$schedule->quarterly(['days_of_month' => [7, 21], 'start_month' => 2])->from('2025-02-15')->to('2025-11-15');
+$schedule->quarterly(['days_of_month' => [7, 21], 'start_month' => 2])
+    ->from('2025-02-15')->to('2025-11-15');
 
 // Semi-annually (multiple days, optional start_month anchor)
-$schedule->semiannually(['days_of_month' => [10], 'start_month' => 3])->from('2025-03-10')->to('2025-12-10');
+$schedule->semiannually(['days_of_month' => [10], 'start_month' => 3])
+    ->from('2025-03-10')->to('2025-12-10');
 
 // Annually (multiple days, optional start_month anchor)
-$schedule->annually(['days_of_month' => [1, 15], 'start_month' => 4])->from('2025-04-01')->to('2026-04-01');
+$schedule->annually(['days_of_month' => [1, 15], 'start_month' => 4])
+    ->from('2025-04-01')->to('2026-04-01');
 ```
 
 ### Date Ranges
 
+Specify when schedules are active:
+
 ```php
 $schedule->from('2025-01-15');                          // Single date
-$schedule->on('2025-01-15');                            // Alias (alternative syntax) for from()
+$schedule->on('2025-01-15');                            // Alias for from()
 $schedule->from('2025-01-01')->to('2025-12-31');        // Date range
 $schedule->between('2025-01-01', '2025-12-31');         // Alternative syntax
 $schedule->forYear(2025);                               // Entire year shortcut
 ```
 
 ### Time Periods
+
+Define working hours and time slots:
 
 ```php
 // Single period
@@ -170,7 +191,9 @@ $schedule->addPeriod('14:00', '17:00');
 
 ---
 
-## 🔍 Query & Check
+## 🔍 Query & Check Availability
+
+Check availability and query schedules:
 
 ```php
 // Check if there is at least one bookable slot on the day
@@ -201,7 +224,7 @@ $schedule->isAppointment();
 $schedule->isBlocked();
 ```
 
-> `isAvailableAt()` is deprecated in favor of `isBookableAt()` `isBookableAtTime()` and `getBookableSlots()`. Use the bookable APIs for all new code.
+> ⚠️ **Note:** `isAvailableAt()` is deprecated in favor of `isBookableAt()`, `isBookableAtTime()`, and `getBookableSlots()`. Use the bookable APIs for all new code.
 
 ---
 
@@ -211,19 +234,32 @@ $schedule->isBlocked();
 
 ```php
 // Office hours
-Zap::for($doctor)->named('Office Hours')->availability()
-    ->forYear(2025)->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
-    ->addPeriod('09:00', '12:00')->addPeriod('14:00', '17:00')->save();
+Zap::for($doctor)
+    ->named('Office Hours')
+    ->availability()
+    ->forYear(2025)
+    ->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+    ->addPeriod('09:00', '12:00')
+    ->addPeriod('14:00', '17:00')
+    ->save();
 
 // Lunch break
-Zap::for($doctor)->named('Lunch Break')->blocked()
-    ->forYear(2025)->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
-    ->addPeriod('12:00', '13:00')->save();
+Zap::for($doctor)
+    ->named('Lunch Break')
+    ->blocked()
+    ->forYear(2025)
+    ->weekly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+    ->addPeriod('12:00', '13:00')
+    ->save();
 
 // Book appointment
-Zap::for($doctor)->named('Patient A - Checkup')->appointment()
-    ->from('2025-01-15')->addPeriod('10:00', '11:00')
-    ->withMetadata(['patient_id' => 1])->save();
+Zap::for($doctor)
+    ->named('Patient A - Checkup')
+    ->appointment()
+    ->from('2025-01-15')
+    ->addPeriod('10:00', '11:00')
+    ->withMetadata(['patient_id' => 1])
+    ->save();
 
 // Get available slots
 $slots = $doctor->getBookableSlots('2025-01-15', 60, 15);
@@ -233,37 +269,48 @@ $slots = $doctor->getBookableSlots('2025-01-15', 60, 15);
 
 ```php
 // Room availability (using weekDays convenience method)
-Zap::for($room)->named('Conference Room A')->availability()
+Zap::for($room)
+    ->named('Conference Room A')
+    ->availability()
     ->weekDays(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], '08:00', '18:00')
     ->forYear(2025)
     ->save();
 
 // Book meeting
-Zap::for($room)->named('Board Meeting')->appointment()
-    ->from('2025-03-15')->addPeriod('09:00', '11:00')
-    ->withMetadata(['organizer' => 'john@company.com'])->save();
+Zap::for($room)
+    ->named('Board Meeting')
+    ->appointment()
+    ->from('2025-03-15')
+    ->addPeriod('09:00', '11:00')
+    ->withMetadata(['organizer' => 'john@company.com'])
+    ->save();
 ```
 
 ### 👔 Employee Shift Management
 
 ```php
 // Regular schedule (using weekDays convenience method)
-Zap::for($employee)->named('Regular Shift')->availability()
+Zap::for($employee)
+    ->named('Regular Shift')
+    ->availability()
     ->weekDays(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], '09:00', '17:00')
     ->forYear(2025)
     ->save();
 
 // Vacation
-Zap::for($employee)->named('Vacation Leave')->blocked()
+Zap::for($employee)
+    ->named('Vacation Leave')
+    ->blocked()
     ->between('2025-06-01', '2025-06-15')
-    ->addPeriod('00:00', '23:59')->save();
+    ->addPeriod('00:00', '23:59')
+    ->save();
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-Publish and customize:
+Publish and customize the configuration:
 
 ```bash
 php artisan vendor:publish --tag=zap-config
@@ -290,14 +337,21 @@ Key settings in `config/zap.php`:
 
 ### Custom Schedules with Explicit Rules
 
+Create custom schedules with explicit overlap rules:
+
 ```php
-Zap::for($user)->named('Custom Event')->custom()
-    ->from('2025-01-15')->addPeriod('15:00', '16:00')
+Zap::for($user)
+    ->named('Custom Event')
+    ->custom()
+    ->from('2025-01-15')
+    ->addPeriod('15:00', '16:00')
     ->noOverlap()  // Explicitly prevent overlaps
     ->save();
 ```
 
 ### Metadata Support
+
+Attach custom metadata to schedules:
 
 ```php
 ->withMetadata([
