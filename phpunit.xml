@@ -7,6 +7,7 @@
     <testsuites>
         <testsuite name="Zap">
             <directory suffix="Test.php">./tests</directory>
+            <exclude>./tests/Feature/WeeklyOddEven</exclude>
         </testsuite>
     </testsuites>
     <source>

@@ -16,11 +16,11 @@ use Zap\Enums\ScheduleTypes;
 use Zap\Helper\DateHelper;
 
 /**
- * @property int $id
+ * @property int|string $id
  * @property string $name
  * @property string|null $description
  * @property string $schedulable_type
- * @property int $schedulable_id
+ * @property int|string $schedulable_id
  * @property ScheduleTypes $schedule_type
  * @property Carbon $start_date
  * @property Carbon|null $end_date
@@ -47,6 +47,11 @@ use Zap\Helper\DateHelper;
  */
 class Schedule extends Model
 {
+    /**
+     * The table associated with the model.
+     */
+    protected $table = 'schedules';
+
     /**
      * The attributes that are mass assignable.
      */
@@ -85,6 +90,16 @@ class Schedule extends Model
     protected $guarded = [];
 
     /**
+     * Retrieve the FQCN of the class to use for Schedule Period models.
+     *
+     * @return class-string<SchedulePeriod>
+     */
+    protected function getSchedulePeriodClass(): string
+    {
+        return config('zap.models.schedule_period', SchedulePeriod::class);
+    }
+
+    /**
      * Get the parent schedulable model.
      */
     public function schedulable(): MorphTo
@@ -99,7 +114,7 @@ class Schedule extends Model
      */
     public function periods(): HasMany
     {
-        return $this->hasMany(SchedulePeriod::class);
+        return $this->hasMany($this->getSchedulePeriodClass(), 'schedule_id');
     }
 
     /**

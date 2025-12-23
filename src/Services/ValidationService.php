@@ -8,6 +8,14 @@ use Zap\Exceptions\InvalidScheduleException;
 
 class ValidationService
 {
+    public function __construct(
+        private ?string $scheduleClass,
+        private ?string $schedulePeriodClass,
+    ) {
+        $this->scheduleClass = config('zap.models.schedule', \Zap\Models\Schedule::class);
+        $this->schedulePeriodClass = config('zap.models.schedule_period', \Zap\Models\SchedulePeriod::class);
+    }
+
     /**
      * Validate a schedule before creation.
      */
@@ -538,7 +546,7 @@ class ValidationService
         }
 
         // Create a temporary schedule for conflict checking
-        $tempSchedule = new \Zap\Models\Schedule([
+        $tempSchedule = new $this->scheduleClass([
             'schedulable_type' => get_class($schedulable),
             'schedulable_id' => $schedulable->getKey(),
             'start_date' => $attributes['start_date'],
@@ -553,7 +561,7 @@ class ValidationService
         // Create temporary periods
         $tempPeriods = collect();
         foreach ($periods as $period) {
-            $tempPeriods->push(new \Zap\Models\SchedulePeriod([
+            $tempPeriods->push(new $this->schedulePeriodClass([
                 'date' => $period['date'] ?? $attributes['start_date'],
                 'start_time' => $period['start_time'],
                 'end_time' => $period['end_time'],
@@ -593,7 +601,7 @@ class ValidationService
         $bufferMinutes = config('zap.conflict_detection.buffer_minutes', 0);
 
         // Get all other active schedules for the same schedulable
-        $otherSchedules = \Zap\Models\Schedule::where('schedulable_type', $schedule->schedulable_type)
+        $otherSchedules = $this->scheduleClass::where('schedulable_type', $schedule->schedulable_type)
             ->where('schedulable_id', $schedule->schedulable_id)
             ->where('id', '!=', $schedule->id)
             ->active()
