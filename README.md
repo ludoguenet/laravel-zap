@@ -32,11 +32,31 @@ Zap is a comprehensive calendar and scheduling system for Laravel. Manage availa
 
 **Requirements:** PHP ≤8.5 • Laravel ≤12.0
 
+You can install the package via composer:
+
 ```bash
 composer require laraveljutsu/zap
-php artisan vendor:publish --tag=zap-migrations
+```
+
+You should publish the migration and the `config/zap.php` config file with:
+
+```bash
+php artisan vendor:publish --provider="Zap\ZapServiceProvider"
+```
+
+### Before Running Migrations
+
+**If you are USING UUIDs**, see the [Custom Model Support](#custom-model-support) section of the docs on UUID steps, before you continue. It explains some changes you may want to make to the migrations and config file before continuing. It also mentions important considerations after extending this package's models for UUID capability.
+
+If so, run the migration command:
+
+```bash
 php artisan migrate
 ```
+
+### Note for Apps Using UUIDs/ULIDs/GUIDs
+
+This package expects the primary key of your models to be an auto-incrementing int. If it is not, you may need to modify the `create_schedules_table` and `create_schedule_periods_table` migration and/or modify the default configuration. See [Custom Model Support](#custom-model-support) for more information.
 
 ### Setup Your Models
 
@@ -50,14 +70,6 @@ class Doctor extends Model
     use HasSchedules;
 }
 ```
-
-### Note for Apps Using UUIDs/ULIDs/GUIDs
-
-This package expects the primary key of your models to be an auto-incrementing int. If it is not, you may need to modify the `create_schedules_table` and `create_schedule_periods_table` migration and/or modify the default configuration. See [Custom Model Support](#custom-model-support) for more information.
-
-### Before Running Migrations
-
-**If you are USING UUIDs**, see the [Custom Model Support](#custom-model-support) section of the docs on UUID steps, before you continue. It explains some changes you may want to make to the migrations and config file before continuing. It also mentions important considerations after extending this package's models for UUID capability.
 
 ---
 
