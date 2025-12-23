@@ -127,7 +127,7 @@ describe('Conflict Detection', function () {
 
         // Create a new appointment schedule that overlaps with both
         $newSchedule = new Schedule([
-            'schedulable_type' => get_class($user),
+            'schedulable_type' => $user->getMorphClass(),
             'schedulable_id' => $user->getKey(),
             'start_date' => '2025-01-01',
             'name' => 'Conflicting Meeting',

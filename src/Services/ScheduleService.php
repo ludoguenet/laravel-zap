@@ -42,7 +42,7 @@ class ScheduleService
 
             // Create the schedule
             $schedule = new $this->scheduleClass($attributes);
-            $schedule->schedulable_type = get_class($schedulable);
+            $schedule->schedulable_type = $schedulable->getMorphClass();
             $schedule->schedulable_id = $schedulable->getKey();
             $schedule->save();
 

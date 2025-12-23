@@ -99,7 +99,7 @@ class ConflictDetectionService
     {
         // Create a temporary schedule for conflict checking
         $tempSchedule = new $this->scheduleClass([
-            'schedulable_type' => get_class($schedulable),
+            'schedulable_type' => $schedulable->getMorphClass(),
             'schedulable_id' => $schedulable->getKey(),
             'start_date' => $schedule->start_date,
             'end_date' => $schedule->end_date,
@@ -355,7 +355,7 @@ class ConflictDetectionService
         string $startTime,
         string $endTime
     ): Collection {
-        return $this->scheduleClass::where('schedulable_type', get_class($schedulable))
+        return $this->scheduleClass::where('schedulable_type', $schedulable->getMorphClass())
             ->where('schedulable_id', $schedulable->getKey())
             ->active()
             ->forDate($date)

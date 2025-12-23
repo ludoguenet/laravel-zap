@@ -314,8 +314,8 @@ it('supports different schedulable types', function () {
         ->addPeriod('11:00', '12:00')
         ->save();
 
-    expect($userSchedule->schedulable_type)->toBe('Zap\Tests\ZapTestUser');
-    expect($roomSchedule->schedulable_type)->toBe('Zap\Tests\ZapTestRoom');
+    expect($userSchedule->schedulable_type)->toBe('users');
+    expect($roomSchedule->schedulable_type)->toBe('rooms');
     expect($userSchedule->schedulable_id)->toBe($user->getKey());
     expect($roomSchedule->schedulable_id)->toBe($room->getKey());
 });

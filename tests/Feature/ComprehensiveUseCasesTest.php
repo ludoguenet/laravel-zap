@@ -1025,7 +1025,7 @@ describe('Comprehensive Use Cases - All Features', function () {
             // Create the schedule object without saving to check conflicts
             // Use the same approach as ValidationService
             $tempSchedule = new Schedule([
-                'schedulable_type' => get_class($user),
+                'schedulable_type' => $user->getMorphClass(),
                 'schedulable_id' => $user->getKey(),
                 'start_date' => $newSchedule['attributes']['start_date'],
                 'end_date' => $newSchedule['attributes']['end_date'] ?? null,
@@ -1071,7 +1071,7 @@ describe('Comprehensive Use Cases - All Features', function () {
 
             // Create the schedule object without saving to check conflicts
             $tempSchedule = new Schedule($schedule['attributes']);
-            $tempSchedule->schedulable_type = get_class($user);
+            $tempSchedule->schedulable_type = $user->getMorphClass();
             $tempSchedule->schedulable_id = $user->getKey();
             $tempSchedule->setRelation('periods', collect($schedule['periods'])->map(function ($period) {
                 return new \Zap\Models\SchedulePeriod($period);
@@ -1101,7 +1101,7 @@ describe('Comprehensive Use Cases - All Features', function () {
             // Create the schedule object without saving to check conflicts
             // Use the same approach as ValidationService
             $tempSchedule = new Schedule([
-                'schedulable_type' => get_class($user),
+                'schedulable_type' => $user->getMorphClass(),
                 'schedulable_id' => $user->getKey(),
                 'start_date' => $newSchedule['attributes']['start_date'],
                 'end_date' => $newSchedule['attributes']['end_date'] ?? null,
@@ -1148,7 +1148,7 @@ describe('Comprehensive Use Cases - All Features', function () {
             // Create the schedule object without saving to check conflicts
             // Use the same approach as ValidationService
             $tempSchedule = new Schedule([
-                'schedulable_type' => get_class($user),
+                'schedulable_type' => $user->getMorphClass(),
                 'schedulable_id' => $user->getKey(),
                 'start_date' => $newSchedule['attributes']['start_date'],
                 'end_date' => $newSchedule['attributes']['end_date'] ?? null,
