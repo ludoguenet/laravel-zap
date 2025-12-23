@@ -8,7 +8,6 @@ use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
 use Zap\Data\FrequencyConfig;
 use Zap\Enums\ScheduleTypes;
-use Zap\Models\Schedule;
 use Zap\Services\ConflictDetectionService;
 
 /**
@@ -22,19 +21,29 @@ use Zap\Services\ConflictDetectionService;
 trait HasSchedules
 {
     /**
+     * Retrieve the FQCN of the class to use for Schedule models.
+     *
+     * @return class-string<\Zap\Models\Schedule>
+     */
+    protected function getScheduleClass(): string
+    {
+        return config('zap.models.schedule', \Zap\Models\Schedule::class);
+    }
+
+    /**
      * Get all schedules for this model.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function schedules(): MorphMany
     {
-        return $this->morphMany(Schedule::class, 'schedulable');
+        return $this->morphMany($this->getScheduleClass(), 'schedulable');
     }
 
     /**
      * Get only active schedules.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function activeSchedules(): MorphMany
     {
@@ -44,7 +53,7 @@ trait HasSchedules
     /**
      * Get availability schedules.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function availabilitySchedules(): MorphMany
     {
@@ -54,7 +63,7 @@ trait HasSchedules
     /**
      * Get appointment schedules.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function appointmentSchedules(): MorphMany
     {
@@ -64,7 +73,7 @@ trait HasSchedules
     /**
      * Get blocked schedules.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function blockedSchedules(): MorphMany
     {
@@ -74,7 +83,7 @@ trait HasSchedules
     /**
      * Get schedules for a specific date.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function schedulesForDate(string $date): MorphMany
     {
@@ -84,7 +93,7 @@ trait HasSchedules
     /**
      * Get schedules within a date range.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function schedulesForDateRange(string $startDate, string $endDate): MorphMany
     {
@@ -94,7 +103,7 @@ trait HasSchedules
     /**
      * Get recurring schedules.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function recurringSchedules(): MorphMany
     {
@@ -104,7 +113,7 @@ trait HasSchedules
     /**
      * Get schedules of a specific type.
      *
-     * @return MorphMany<Schedule, $this>
+     * @return MorphMany<\Zap\Models\Schedule, $this>
      */
     public function schedulesOfType(string $type): MorphMany
     {
@@ -122,7 +131,7 @@ trait HasSchedules
     /**
      * Check if this model has any schedule conflicts with the given schedule.
      */
-    public function hasScheduleConflict(Schedule $schedule): bool
+    public function hasScheduleConflict(\Zap\Models\Schedule $schedule): bool
     {
         return app(ConflictDetectionService::class)->hasConflicts($schedule);
     }
@@ -130,7 +139,7 @@ trait HasSchedules
     /**
      * Find all schedules that conflict with the given schedule.
      */
-    public function findScheduleConflicts(Schedule $schedule): array
+    public function findScheduleConflicts(\Zap\Models\Schedule $schedule): array
     {
         return app(ConflictDetectionService::class)->findConflicts($schedule);
     }
@@ -147,7 +156,7 @@ trait HasSchedules
             E_USER_DEPRECATED
         );
         // Get all active schedules for this model on this date
-        $schedules = $schedules ?? \Zap\Models\Schedule::where('schedulable_type', get_class($this))
+        $schedules = $schedules ?? $this->getScheduleClass()::where('schedulable_type', get_class($this))
             ->where('schedulable_id', $this->getKey())
             ->active()
             ->forDate($date)
@@ -309,7 +318,7 @@ trait HasSchedules
         $iterations = 0;
         $slotInterval = $slotDuration + $bufferMinutes;
 
-        $schedules = \Zap\Models\Schedule::where('schedulable_type', get_class($this))
+        $schedules = $this->getScheduleClass()::where('schedulable_type', get_class($this))
             ->where('schedulable_id', $this->getKey())
             ->active()
             ->forDate($date)
@@ -492,7 +501,7 @@ trait HasSchedules
         $checkDate = \Carbon\Carbon::parse($date);
 
         // Get all availability schedules for this date
-        $availabilitySchedules = Schedule::where('schedulable_type', get_class($this))
+        $availabilitySchedules = $this->getScheduleClass()::where('schedulable_type', get_class($this))
             ->where('schedulable_id', $this->getKey())
             ->availability()
             ->active()
@@ -534,7 +543,7 @@ trait HasSchedules
      */
     protected function getBlockingSchedulesForDate(string $date): \Illuminate\Support\Collection
     {
-        return Schedule::where('schedulable_type', get_class($this))
+        return $this->getScheduleClass()::where('schedulable_type', get_class($this))
             ->where('schedulable_id', $this->getKey())
             ->whereIn('schedule_type', [
                 ScheduleTypes::APPOINTMENT->value,

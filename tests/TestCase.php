@@ -65,6 +65,10 @@ abstract class TestCase extends Orchestra
             'cache' => [
                 'enabled' => false,
             ],
+            'models' => [
+                'schedule' => \Zap\Models\Schedule::class,
+                'schedule_period' => \Zap\Models\SchedulePeriod::class,
+            ],
         ]);
 
         // Database setup

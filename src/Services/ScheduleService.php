@@ -10,14 +10,16 @@ use Zap\Data\FrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Events\ScheduleCreated;
 use Zap\Exceptions\ScheduleConflictException;
-use Zap\Models\Schedule;
 
 class ScheduleService
 {
     public function __construct(
         private ValidationService $validator,
-        private ConflictDetectionService $conflictService
-    ) {}
+        private ConflictDetectionService $conflictService,
+        private ?string $scheduleClass
+    ) {
+        $this->scheduleClass = config('zap.models.schedule', \Zap\Models\Schedule::class);
+    }
 
     /**
      * Create a new schedule with validation and conflict detection.
@@ -27,7 +29,7 @@ class ScheduleService
         array $attributes,
         array $periods = [],
         array $rules = []
-    ): Schedule {
+    ): \Zap\Models\Schedule {
         return DB::transaction(function () use ($schedulable, $attributes, $periods, $rules) {
             // Set default values
             $attributes = array_merge([
@@ -39,7 +41,7 @@ class ScheduleService
             $this->validator->validate($schedulable, $attributes, $periods, $rules);
 
             // Create the schedule
-            $schedule = new Schedule($attributes);
+            $schedule = new $this->scheduleClass($attributes);
             $schedule->schedulable_type = get_class($schedulable);
             $schedule->schedulable_id = $schedulable->getKey();
             $schedule->save();
@@ -62,7 +64,7 @@ class ScheduleService
     /**
      * Update an existing schedule.
      */
-    public function update(Schedule $schedule, array $attributes, array $periods = []): Schedule
+    public function update(\Zap\Models\Schedule $schedule, array $attributes, array $periods = []): \Zap\Models\Schedule
     {
         return DB::transaction(function () use ($schedule, $attributes, $periods) {
             // Update the schedule attributes
@@ -94,7 +96,7 @@ class ScheduleService
     /**
      * Delete a schedule.
      */
-    public function delete(Schedule $schedule): bool
+    public function delete(\Zap\Models\Schedule $schedule): bool
     {
         return DB::transaction(function () use ($schedule) {
             // Delete all periods first
@@ -124,7 +126,7 @@ class ScheduleService
     /**
      * Find all schedules that conflict with the given schedule.
      */
-    public function findConflicts(Schedule $schedule): array
+    public function findConflicts(\Zap\Models\Schedule $schedule): array
     {
         return $this->conflictService->findConflicts($schedule);
     }
@@ -132,7 +134,7 @@ class ScheduleService
     /**
      * Check if a schedule has conflicts.
      */
-    public function hasConflicts(Schedule $schedule): bool
+    public function hasConflicts(\Zap\Models\Schedule $schedule): bool
     {
         return $this->conflictService->hasConflicts($schedule);
     }
@@ -210,7 +212,7 @@ class ScheduleService
      * Generate recurring schedule instances for a given period.
      */
     public function generateRecurringInstances(
-        Schedule $schedule,
+        \Zap\Models\Schedule $schedule,
         string $startDate,
         string $endDate
     ): array {
@@ -240,7 +242,7 @@ class ScheduleService
      * unused
      * Check if a recurring instance should be created for the given date.
      */
-    private function shouldCreateInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    private function shouldCreateInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
     {
         $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
@@ -256,7 +258,7 @@ class ScheduleService
      * unused
      * Get the next recurrence date.
      */
-    private function getNextRecurrence(Schedule $schedule, \Carbon\CarbonInterface $current): \Carbon\CarbonInterface
+    private function getNextRecurrence(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $current): \Carbon\CarbonInterface
     {
         $frequency = $schedule->frequency;
 

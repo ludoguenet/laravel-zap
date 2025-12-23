@@ -51,6 +51,15 @@ class Doctor extends Model
 }
 ```
 
+### Note for Apps Using UUIDs/ULIDs/GUIDs
+
+This package expects the primary key of your models to be an auto-incrementing int. If it is not, you may need to modify the `create_schedules_table` and `create_schedule_periods_table` migration and/or modify the default configuration. See [Custom Model Support](#custom-model-support) for more information.
+
+
+### Before Running Migrations
+
+**If you are USING UUIDs**, see the [Custom Model Support](#custom-model-support) section of the docs on UUID steps, before you continue. It explains some changes you may want to make to the migrations and config file before continuing. It also mentions important considerations after extending this package's models for UUID capability.
+
 ---
 
 ## 🧩 Core Concepts
@@ -310,6 +319,12 @@ Zap::for($employee)
 
 ## ⚙️ Configuration
 
+Publish the migration:
+
+```bash
+php artisan vendor:publish --tag=zap-migrations
+```
+
 Publish and customize the configuration:
 
 ```bash
@@ -361,6 +376,87 @@ Attach custom metadata to schedules:
 ])
 ```
 
+### Custom Model Support
+
+If you're using UUIDs (ULID, GUID, etc) for your `User` models or `Schedule` / `SchedulePeriod` models there are a few considerations to note.
+
+Since each UUID implementation approach is different, some of these may or may not benefit you. As always, your implementation may vary.
+
+We use "uuid" in the examples below. Adapt for ULID or GUID as needed.
+
+#### Models
+
+If you want all the schedule objects to have a UUID instead of an integer, you will need to extend the default `Schedule` and `SchedulePeriod` models into your own namespace in order to set some specific properties.
+
+Create new models, which extend the `Zap\Models\Schedule` and `Zap\Models\SchedulePeriod` models of this package, and add Laravel's `HasUuids` trait (available since Laravel 9):
+
+```bash
+php artisan make:model Schedule
+php artisan make:model SchedulePeriod
+```
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Zap\Models\Schedule as Model;
+
+class Schedule extends Model
+{
+    use HasUuids;
+}
+```
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Zap\Models\SchedulePeriod as Model;
+
+class SchedulePeriod extends Model
+{
+    use HasUuids;
+}
+```
+
+#### Configuration
+
+```diff
+// config/zap.php
+
+'models' => [
+-   'schedule' => \Zap\Models\Schedule::class,
++   'schedule' => \App\Models\Schedule::class,
+
+-   'schedule_period' => \Zap\Models\SchedulePeriod::class,
++   'schedule_period' => \App\Models\SchedulePeriod::class,
+],
+```
+
+#### Migrations
+
+You will need to update the `create_schedules_table` and `create_schedule_periods_table` migration after creating it with `php artisan vendor:publish`. After making your edits, be sure to run the migration.
+
+```diff
+// database/migrations/*_create_schedules_table.php
+
+- $table->id();
++ $table->uuid('id')->primary();
+- $table->morphs('schedulable');
++ $table->uuidMorphs('schedulable');
+
+// database/migrations/*_create_schedule_periods_table
+
+- $table->id();
++ $table->uuid('id')->primary();
+- $table->foreignId('schedule_id')->constrained()->cascadeOnDelete();
++ $table->foreignUuid('schedule_id')->constrained()->cascadeOnDelete();
+```
+
 ---
 
 ## 🤝 Contributing
@@ -368,10 +464,12 @@ Attach custom metadata to schedules:
 We welcome contributions! Follow PSR-12 coding standards and include tests.
 
 ```bash
-git clone https://github.com/laraveljutsu/zap.git
-cd zap
+git clone https://github.com/ludoguenet/laravel-zap.git
+
+cd laravel-zap
+
 composer install
-vendor/bin/pest
+composer pest
 ```
 
 ---

@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Date;
 use PDO;
 
 /**
- * @property int $id
- * @property int $schedule_id
+ * @property int|string $id
+ * @property int|string $schedule_id
  * @property Carbon $date
  * @property Carbon|null $start_time
  * @property Carbon|null $end_time
@@ -27,6 +27,11 @@ use PDO;
  */
 class SchedulePeriod extends Model
 {
+    /**
+     * The table associated with the model.
+     */
+    protected $table = 'schedule_periods';
+
     /**
      * The attributes that are mass assignable.
      */
@@ -51,11 +56,21 @@ class SchedulePeriod extends Model
     ];
 
     /**
+     * Retrieve the FQCN of the class to use for Schedule models.
+     *
+     * @return class-string<Schedule>
+     */
+    protected function getScheduleClass(): string
+    {
+        return config('zap.models.schedule', Schedule::class);
+    }
+
+    /**
      * Get the schedule that owns the period.
      */
     public function schedule(): BelongsTo
     {
-        return $this->belongsTo(Schedule::class);
+        return $this->belongsTo($this->getScheduleClass(), 'schedule_id');
     }
 
     /**

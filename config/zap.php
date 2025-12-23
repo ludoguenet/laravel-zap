@@ -90,4 +90,16 @@ return [
         'allow_overlapping_periods' => false, // Allow periods to overlap within same schedule
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Models
+    |--------------------------------------------------------------------------
+    |
+    | Configure custom models to be used by this package.
+    |
+    */
+    'models' => [
+        'schedule' => \Zap\Models\Schedule::class,
+        'schedule_period' => \Zap\Models\SchedulePeriod::class,
+    ],
 ];
