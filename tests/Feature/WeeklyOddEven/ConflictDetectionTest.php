@@ -124,7 +124,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
         // Create a new appointment schedule that overlaps only Meeting 2.
         // Because 'Weekly-Even Meeting' is in even weeks
         $newSchedule = new Schedule([
-            'schedulable_type' => get_class($user),
+            'schedulable_type' => $user->getMorphClass(),
             'schedulable_id' => $user->getKey(),
             'start_date' => '2025-01-01',
             'name' => 'Conflicting Meeting',
@@ -168,7 +168,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
         // Create a new appointment schedule that overlaps only Meeting 2.
         // Because 'Weekly-Odd Meeting' is in odd weeks
         $newSchedule = new Schedule([
-            'schedulable_type' => get_class($user),
+            'schedulable_type' => $user->getMorphClass(),
             'schedulable_id' => $user->getKey(),
             'start_date' => '2025-01-06',
             'name' => 'Conflicting Meeting',

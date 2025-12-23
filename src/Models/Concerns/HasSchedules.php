@@ -156,7 +156,7 @@ trait HasSchedules
             E_USER_DEPRECATED
         );
         // Get all active schedules for this model on this date
-        $schedules = $schedules ?? $this->getScheduleClass()::where('schedulable_type', get_class($this))
+        $schedules = $schedules ?? $this->getScheduleClass()::where('schedulable_type', $this->getMorphClass())
             ->where('schedulable_id', $this->getKey())
             ->active()
             ->forDate($date)
@@ -318,7 +318,7 @@ trait HasSchedules
         $iterations = 0;
         $slotInterval = $slotDuration + $bufferMinutes;
 
-        $schedules = $this->getScheduleClass()::where('schedulable_type', get_class($this))
+        $schedules = $this->getScheduleClass()::where('schedulable_type', $this->getMorphClass())
             ->where('schedulable_id', $this->getKey())
             ->active()
             ->forDate($date)
@@ -501,7 +501,7 @@ trait HasSchedules
         $checkDate = \Carbon\Carbon::parse($date);
 
         // Get all availability schedules for this date
-        $availabilitySchedules = $this->getScheduleClass()::where('schedulable_type', get_class($this))
+        $availabilitySchedules = $this->getScheduleClass()::where('schedulable_type', $this->getMorphClass())
             ->where('schedulable_id', $this->getKey())
             ->availability()
             ->active()
@@ -543,7 +543,7 @@ trait HasSchedules
      */
     protected function getBlockingSchedulesForDate(string $date): \Illuminate\Support\Collection
     {
-        return $this->getScheduleClass()::where('schedulable_type', get_class($this))
+        return $this->getScheduleClass()::where('schedulable_type', $this->getMorphClass())
             ->where('schedulable_id', $this->getKey())
             ->whereIn('schedule_type', [
                 ScheduleTypes::APPOINTMENT->value,

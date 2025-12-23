@@ -17,6 +17,15 @@ abstract class TestCase extends Orchestra
     protected function setUp(): void
     {
         parent::setUp();
+
+        \Illuminate\Database\Eloquent\Relations\Relation::enforceMorphMap(
+            map: [
+                'rooms' => \Zap\Tests\ZapTestRoom::class,
+                'users' => \Zap\Tests\ZapTestUser::class,
+            ],
+
+            merge: true
+        );
     }
 
     protected function getPackageProviders($app): array

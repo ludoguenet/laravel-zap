@@ -241,7 +241,7 @@ describe('Documentation Examples Verification', function () {
         expect($availability->id)->not->toBeNull();
         // Verify the schedule is associated with the doctor
         expect($availability->schedulable_id)->toBe($doctor->getKey());
-        expect($availability->schedulable_type)->toBe(get_class($doctor));
+        expect($availability->schedulable_type)->toBe($doctor->getMorphClass());
 
         // Create appointment on a different date to avoid conflicts
         // Verify it was saved successfully
@@ -255,7 +255,7 @@ describe('Documentation Examples Verification', function () {
         expect($appointment->schedule_type->value)->toBe('appointment');
         // Verify the appointment is associated with the doctor
         expect($appointment->schedulable_id)->toBe($doctor->getKey());
-        expect($appointment->schedulable_type)->toBe(get_class($doctor));
+        expect($appointment->schedulable_type)->toBe($doctor->getMorphClass());
 
         // Get schedules for a date (forDate scope filters by date range and recurrence)
         // Note: forDate works for recurring schedules, for non-recurring it checks if date is within range
