@@ -265,7 +265,9 @@ class Schedule extends Model
                 ->orWhereBetween('end_date', [$startDate, $endDate])
                 ->orWhere(function ($q2) use ($startDate, $endDate) {
                     $q2->where('start_date', '<=', $startDate)
-                        ->where('end_date', '>=', $endDate);
+                        ->where(
+                            fn ($q3) => $q3->whereNull('end_date')->orWhere('end_date', '>=', $endDate),
+                        );
                 });
         });
     }
