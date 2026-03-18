@@ -189,6 +189,39 @@ describe('can check if a date time is bookable using isBookableAtTime', function
 
     });
 
+    it('returns true when the requested time fits inside a bookable slot with a custom slot duration', function () {
+        $user = createUser();
+
+        // Create an availability for even weeks
+        Zap::for($user)
+            ->availability()
+            ->forYear(2025)
+            ->addPeriod('09:00', '12:00')
+            ->weeklyEven(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+            ->save();
+
+        // Create an appointment inside the bookable range
+        $appointment = Zap::for($user)
+            ->appointment()
+            ->on('2025-01-06') // Monday week 2 → even
+            ->addPeriod('09:00', '09:30')
+            ->save();
+
+        $custom = Zap::for($user)
+            ->custom()
+            ->on('2025-01-06') // Monday week 2 → even
+            ->addPeriod('11:00', '11:30')
+            ->save();
+
+        // Check if the user is bookable on the same slot
+        $isBookable1 = $user->isBookableAtTime('2025-01-06', '09:30', '10:00', null, 30);
+
+        $isBookable2 = $user->isBookableAtTime('2025-01-06', '11:30', '12:00', null, 30);
+
+        expect($isBookable1)->toBeTrue();
+        expect($isBookable2)->toBeTrue();
+    });
+
 });
 
 it('can find next bookable slot', function () {
