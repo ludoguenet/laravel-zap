@@ -207,6 +207,7 @@ $schedule->addPeriod('14:00', '17:00');
 |--------------------------|--------|
 | Any bookable slot today? | `$model->isBookableAt('2025-01-15', 60)` |
 | Time range bookable?     | `$model->isBookableAtTime('2025-01-15', '09:00', '09:30')` |
+| Time range bookable (custom slot)? | `$model->isBookableAtTime('2025-01-15', '09:30', '10:00', null, 30)` |
 | List bookable slots      | `$model->getBookableSlots('2025-01-15', 60, 15)` |
 | Next bookable slot       | `$model->getNextBookableSlot('2025-01-15', 60, 15)` |
 | Conflicts for a schedule | `Zap::findConflicts($schedule)` / `Zap::hasConflicts($schedule)` |
