@@ -38,7 +38,7 @@ final class EveryXWeeksFrequencyConfig extends FrequencyConfig
             $startsOn = Carbon::parse($startsOn);
         }
 
-        $this->startsOn = $startsOn->copy()->startOfWeek(
+        $this->startsOn = $this->normalizeToAppTimezone($startsOn)->startOfWeek(
             config()->integer('zap.calendar.week_start', CarbonInterface::MONDAY)
         );
     }
@@ -74,7 +74,7 @@ final class EveryXWeeksFrequencyConfig extends FrequencyConfig
             return $this;
         }
 
-        $this->startsOn = $startDate->copy()->startOfWeek(
+        $this->startsOn = $this->normalizeToAppTimezone($startDate)->startOfWeek(
             config()->integer('zap.calendar.week_start', CarbonInterface::MONDAY)
         );
 
@@ -122,7 +122,7 @@ final class EveryXWeeksFrequencyConfig extends FrequencyConfig
         $weekStart = config()->integer('zap.calendar.week_start', CarbonInterface::MONDAY);
 
         if ($this->startsOn === null) {
-            $this->startsOn = $current->copy()->startOfWeek($weekStart);
+            $this->startsOn = $this->normalizeToAppTimezone($current)->startOfWeek($weekStart);
         }
 
         $allowedDays = $this->days;
@@ -161,5 +161,20 @@ final class EveryXWeeksFrequencyConfig extends FrequencyConfig
             'startsOn' => $this->startsOn,
             'frequencyWeeks' => $this->frequencyWeeks,
         ];
+    }
+
+    private function normalizeToAppTimezone(CarbonInterface $date): CarbonInterface
+    {
+        $appTimezone = config('app.timezone', 'UTC');
+
+        return Carbon::create(
+            $date->year,
+            $date->month,
+            $date->day,
+            0,
+            0,
+            0,
+            $appTimezone
+        );
     }
 }
