@@ -453,9 +453,10 @@ trait HasSchedules
      * @param  string  $startTime  Requested start time (HH:MM)
      * @param  string  $endTime  Requested end time (HH:MM)
      * @param  Collection|null  $schedules  Optional preloaded schedules
+     * @param  int  $slotDuration  Optional slot duration in minutes
      * @return bool True if bookable, false otherwise
      */
-    public function isBookableAtTime(string $date, string $startTime, string $endTime, ?Collection $schedules = null): bool
+    public function isBookableAtTime(string $date, string $startTime, string $endTime, ?Collection $schedules = null, int $slotDuration = 60): bool
     {
         // Load active schedules for this model on the given date
         $schedules = $schedules ?? $this->schedules()
@@ -465,7 +466,7 @@ trait HasSchedules
             ->get();
 
         // Retrieve all bookable slots generated for the given date
-        $bookableSlots = $this->getBookableSlots($date);
+        $bookableSlots = $this->getBookableSlots($date, $slotDuration);
 
         // Check if any schedule blocks the requested time range
         foreach ($schedules as $schedule) {
