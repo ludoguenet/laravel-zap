@@ -2,6 +2,7 @@
 
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Collection;
 use Zap\Data\MonthlyFrequencyConfig\AnnuallyFrequencyConfig;
 use Zap\Data\MonthlyFrequencyConfig\BiMonthlyFrequencyConfig;
 use Zap\Data\MonthlyFrequencyConfig\MonthlyFrequencyConfig;
@@ -14,6 +15,7 @@ use Zap\Enums\ScheduleTypes;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
 use Zap\Models\Schedule;
+use Zap\Models\SchedulePeriod;
 
 describe('Comprehensive Use Cases - All Features', function () {
 
@@ -598,7 +600,7 @@ describe('Comprehensive Use Cases - All Features', function () {
                 ->save();
 
             $schedules = $user->schedulesForDate('2025-01-06')->get(); // Monday
-            expect($schedules)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+            expect($schedules)->toBeInstanceOf(Collection::class);
         });
 
         it('can query schedules for a date range', function () {
@@ -612,7 +614,7 @@ describe('Comprehensive Use Cases - All Features', function () {
                 ->save();
 
             $schedules = $user->schedulesForDateRange('2025-01-15', '2025-01-20')->get();
-            expect($schedules)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+            expect($schedules)->toBeInstanceOf(Collection::class);
         });
 
         it('can query schedules by type using schedulesOfType', function () {
@@ -626,9 +628,9 @@ describe('Comprehensive Use Cases - All Features', function () {
             $appointments = $user->schedulesOfType('appointment')->get();
             $blocked = $user->schedulesOfType('blocked')->get();
 
-            expect($availability)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
-            expect($appointments)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
-            expect($blocked)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+            expect($availability)->toBeInstanceOf(Collection::class);
+            expect($appointments)->toBeInstanceOf(Collection::class);
+            expect($blocked)->toBeInstanceOf(Collection::class);
         });
 
         it('can query active schedules only', function () {
@@ -658,7 +660,7 @@ describe('Comprehensive Use Cases - All Features', function () {
 
             // Query active schedules
             $activeSchedules = $user->activeSchedules()->get();
-            expect($activeSchedules)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+            expect($activeSchedules)->toBeInstanceOf(Collection::class);
 
             // Verify inactive schedule is NOT in active results
             $activeIds = $activeSchedules->pluck('id');
@@ -709,8 +711,8 @@ describe('Comprehensive Use Cases - All Features', function () {
             $allAvailability = Schedule::availability()->get();
             $allAppointments = Schedule::appointments()->get();
 
-            expect($allAvailability)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
-            expect($allAppointments)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+            expect($allAvailability)->toBeInstanceOf(Collection::class);
+            expect($allAppointments)->toBeInstanceOf(Collection::class);
         });
 
     });
@@ -1033,13 +1035,13 @@ describe('Comprehensive Use Cases - All Features', function () {
                 'is_recurring' => $newSchedule['attributes']['is_recurring'] ?? false,
                 'frequency' => $newSchedule['attributes']['frequency'] ?? null,
                 'frequency_config' => $newSchedule['attributes']['frequency_config'] ?? null,
-                'schedule_type' => $newSchedule['attributes']['schedule_type'] ?? \Zap\Enums\ScheduleTypes::CUSTOM,
+                'schedule_type' => $newSchedule['attributes']['schedule_type'] ?? ScheduleTypes::CUSTOM,
             ]);
 
             // Create temporary periods
             $tempPeriods = collect();
             foreach ($newSchedule['periods'] as $period) {
-                $tempPeriods->push(new \Zap\Models\SchedulePeriod([
+                $tempPeriods->push(new SchedulePeriod([
                     'date' => $period['date'] ?? $newSchedule['attributes']['start_date'],
                     'start_time' => $period['start_time'],
                     'end_time' => $period['end_time'],
@@ -1074,7 +1076,7 @@ describe('Comprehensive Use Cases - All Features', function () {
             $tempSchedule->schedulable_type = $user->getMorphClass();
             $tempSchedule->schedulable_id = $user->getKey();
             $tempSchedule->setRelation('periods', collect($schedule['periods'])->map(function ($period) {
-                return new \Zap\Models\SchedulePeriod($period);
+                return new SchedulePeriod($period);
             }));
 
             $hasConflicts = Zap::hasConflicts($tempSchedule);
@@ -1109,13 +1111,13 @@ describe('Comprehensive Use Cases - All Features', function () {
                 'is_recurring' => $newSchedule['attributes']['is_recurring'] ?? false,
                 'frequency' => $newSchedule['attributes']['frequency'] ?? null,
                 'frequency_config' => $newSchedule['attributes']['frequency_config'] ?? null,
-                'schedule_type' => $newSchedule['attributes']['schedule_type'] ?? \Zap\Enums\ScheduleTypes::CUSTOM,
+                'schedule_type' => $newSchedule['attributes']['schedule_type'] ?? ScheduleTypes::CUSTOM,
             ]);
 
             // Create temporary periods
             $tempPeriods = collect();
             foreach ($newSchedule['periods'] as $period) {
-                $tempPeriods->push(new \Zap\Models\SchedulePeriod([
+                $tempPeriods->push(new SchedulePeriod([
                     'date' => $period['date'] ?? $newSchedule['attributes']['start_date'],
                     'start_time' => $period['start_time'],
                     'end_time' => $period['end_time'],
@@ -1156,13 +1158,13 @@ describe('Comprehensive Use Cases - All Features', function () {
                 'is_recurring' => $newSchedule['attributes']['is_recurring'] ?? false,
                 'frequency' => $newSchedule['attributes']['frequency'] ?? null,
                 'frequency_config' => $newSchedule['attributes']['frequency_config'] ?? null,
-                'schedule_type' => $newSchedule['attributes']['schedule_type'] ?? \Zap\Enums\ScheduleTypes::CUSTOM,
+                'schedule_type' => $newSchedule['attributes']['schedule_type'] ?? ScheduleTypes::CUSTOM,
             ]);
 
             // Create temporary periods
             $tempPeriods = collect();
             foreach ($newSchedule['periods'] as $period) {
-                $tempPeriods->push(new \Zap\Models\SchedulePeriod([
+                $tempPeriods->push(new SchedulePeriod([
                     'date' => $period['date'] ?? $newSchedule['attributes']['start_date'],
                     'start_time' => $period['start_time'],
                     'end_time' => $period['end_time'],

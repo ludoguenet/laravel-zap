@@ -1,6 +1,7 @@
 <?php
 
 use Zap\Builders\ScheduleBuilder;
+use Zap\Enums\Frequency;
 use Zap\Facades\Zap;
 use Zap\Models\Schedule;
 use Zap\Services\ScheduleService;
@@ -118,7 +119,7 @@ it('zap helper works with recurring schedules', function () {
         ->save();
 
     expect($schedule->is_recurring)->toBeTrue();
-    expect($schedule->frequency)->toBe(\Zap\Enums\Frequency::WEEKLY);
+    expect($schedule->frequency)->toBe(Frequency::WEEKLY);
 });
 
 it('zap helper works with findConflicts method', function () {

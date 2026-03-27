@@ -2,6 +2,7 @@
 
 namespace Zap\Data\MonthlyFrequencyConfig;
 
+use Carbon\CarbonInterface;
 use Zap\Data\FrequencyConfig;
 use Zap\Models\Schedule;
 
@@ -30,7 +31,7 @@ abstract class AbstractMonthlyFrequencyConfig extends FrequencyConfig
         );
     }
 
-    public function setStartFromStartDate(\Carbon\CarbonInterface $startDate): self
+    public function setStartFromStartDate(CarbonInterface $startDate): self
     {
         if ($this->start_month === null) {
             $this->start_month = $startDate->month;
@@ -39,7 +40,7 @@ abstract class AbstractMonthlyFrequencyConfig extends FrequencyConfig
         return $this;
     }
 
-    public function getNextRecurrence(\Carbon\CarbonInterface $current): \Carbon\CarbonInterface
+    public function getNextRecurrence(CarbonInterface $current): CarbonInterface
     {
         $daysOfMonth = $this->days_of_month ?? [$current->day];
         if ($current->day >= max($daysOfMonth)) {
@@ -52,7 +53,7 @@ abstract class AbstractMonthlyFrequencyConfig extends FrequencyConfig
         return $current->copy()->day($dayOfMonth);
     }
 
-    public function shouldCreateInstance(\Carbon\CarbonInterface $date): bool
+    public function shouldCreateInstance(CarbonInterface $date): bool
     {
         $daysOfMonth = $this->days_of_month ?? [$date->day];
         $monthDiff = ($date->month - $this->start_month + 12) % $this::getFrequency();
@@ -60,7 +61,7 @@ abstract class AbstractMonthlyFrequencyConfig extends FrequencyConfig
         return in_array($date->day, $daysOfMonth) && $monthDiff === 0;
     }
 
-    public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    public function shouldCreateRecurringInstance(Schedule $schedule, CarbonInterface $date): bool
     {
         $daysOfMonth = $this->days_of_month ?? [$schedule->start_date->day];
         $monthDiff = ($date->month - $this->start_month + 12) % $this::getFrequency();

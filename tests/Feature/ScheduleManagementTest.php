@@ -5,6 +5,7 @@ use Zap\Exceptions\InvalidScheduleException;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
 use Zap\Models\Schedule;
+use Zap\Models\SchedulePeriod;
 
 it('can create a basic schedule', function () {
     $user = createUser();
@@ -406,7 +407,7 @@ it('handles lpad for period times', function () {
         ->addPeriod('8:00', '10:00')
         ->save();
 
-    $overlapping = \Zap\Models\SchedulePeriod::query()
+    $overlapping = SchedulePeriod::query()
         ->where('schedule_id', $schedule->id)
         ->overlapping('2025-11-10', '7:00', '9:00')
         ->exists();

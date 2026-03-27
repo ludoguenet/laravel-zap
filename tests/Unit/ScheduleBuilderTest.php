@@ -316,13 +316,13 @@ describe('ScheduleBuilder', function () {
 
         // Missing schedulable
         expect(fn () => $builder->from('2025-01-01')->build())
-            ->toThrow(\InvalidArgumentException::class, 'Schedulable model must be set');
+            ->toThrow(InvalidArgumentException::class, 'Schedulable model must be set');
 
         // Missing start date
         $user = createUser();
         $builder->reset(); // Reset builder state
         expect(fn () => $builder->for($user)->build())
-            ->toThrow(\InvalidArgumentException::class, 'Start date must be set');
+            ->toThrow(InvalidArgumentException::class, 'Start date must be set');
     });
 
     it('can use between method for date range', function () {

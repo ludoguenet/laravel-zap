@@ -2,12 +2,15 @@
 
 namespace Zap\Models\Concerns;
 
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Zap\Builders\ScheduleBuilder;
 use Zap\Data\FrequencyConfig;
 use Zap\Enums\ScheduleTypes;
+use Zap\Models\Schedule;
 use Zap\Services\ConflictDetectionService;
 
 /**
@@ -16,24 +19,24 @@ use Zap\Services\ConflictDetectionService;
  * This trait provides scheduling capabilities to any Eloquent model.
  * Use this trait in models that need to be schedulable.
  *
- * @mixin \Illuminate\Database\Eloquent\Model
+ * @mixin Model
  */
 trait HasSchedules
 {
     /**
      * Retrieve the FQCN of the class to use for Schedule models.
      *
-     * @return class-string<\Zap\Models\Schedule>
+     * @return class-string<Schedule>
      */
     protected function getScheduleClass(): string
     {
-        return config('zap.models.schedule', \Zap\Models\Schedule::class);
+        return config('zap.models.schedule', Schedule::class);
     }
 
     /**
      * Get all schedules for this model.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function schedules(): MorphMany
     {
@@ -43,7 +46,7 @@ trait HasSchedules
     /**
      * Get only active schedules.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function activeSchedules(): MorphMany
     {
@@ -53,7 +56,7 @@ trait HasSchedules
     /**
      * Get availability schedules.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function availabilitySchedules(): MorphMany
     {
@@ -63,7 +66,7 @@ trait HasSchedules
     /**
      * Get appointment schedules.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function appointmentSchedules(): MorphMany
     {
@@ -73,7 +76,7 @@ trait HasSchedules
     /**
      * Get blocked schedules.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function blockedSchedules(): MorphMany
     {
@@ -83,7 +86,7 @@ trait HasSchedules
     /**
      * Get schedules for a specific date.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function schedulesForDate(string $date): MorphMany
     {
@@ -93,7 +96,7 @@ trait HasSchedules
     /**
      * Get schedules within a date range.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function schedulesForDateRange(string $startDate, string $endDate): MorphMany
     {
@@ -103,7 +106,7 @@ trait HasSchedules
     /**
      * Get recurring schedules.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function recurringSchedules(): MorphMany
     {
@@ -113,7 +116,7 @@ trait HasSchedules
     /**
      * Get schedules of a specific type.
      *
-     * @return MorphMany<\Zap\Models\Schedule, $this>
+     * @return MorphMany<Schedule, $this>
      */
     public function schedulesOfType(string $type): MorphMany
     {
@@ -131,7 +134,7 @@ trait HasSchedules
     /**
      * Check if this model has any schedule conflicts with the given schedule.
      */
-    public function hasScheduleConflict(\Zap\Models\Schedule $schedule): bool
+    public function hasScheduleConflict(Schedule $schedule): bool
     {
         return app(ConflictDetectionService::class)->hasConflicts($schedule);
     }
@@ -139,7 +142,7 @@ trait HasSchedules
     /**
      * Find all schedules that conflict with the given schedule.
      */
-    public function findScheduleConflicts(\Zap\Models\Schedule $schedule): array
+    public function findScheduleConflicts(Schedule $schedule): array
     {
         return app(ConflictDetectionService::class)->findConflicts($schedule);
     }
@@ -177,7 +180,7 @@ trait HasSchedules
     /**
      * Check if a specific schedule blocks the given time period.
      */
-    protected function scheduleBlocksTime(\Zap\Models\Schedule $schedule, string $date, string $startTime, string $endTime): bool
+    protected function scheduleBlocksTime(Schedule $schedule, string $date, string $startTime, string $endTime): bool
     {
         if (! $schedule->isActiveOn($date)) {
             return false;
@@ -209,7 +212,7 @@ trait HasSchedules
     /**
      * Check if a recurring schedule blocks the given time period.
      */
-    protected function recurringScheduleBlocksTime(\Zap\Models\Schedule $schedule, string $date, string $startTime, string $endTime, int $bufferMinutes = 0): bool
+    protected function recurringScheduleBlocksTime(Schedule $schedule, string $date, string $startTime, string $endTime, int $bufferMinutes = 0): bool
     {
         $checkDate = \Carbon\Carbon::parse($date);
 
@@ -233,7 +236,7 @@ trait HasSchedules
     /**
      * Check if a recurring instance should be created for the given date.
      */
-    protected function shouldCreateRecurringInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    protected function shouldCreateRecurringInstance(Schedule $schedule, CarbonInterface $date): bool
     {
         $config = $schedule->frequency_config ?? [];
 
@@ -496,12 +499,12 @@ trait HasSchedules
     /**
      * Get all availability periods for a specific date in a single optimized query.
      */
-    protected function getAvailabilityPeriodsForDate(string $date): \Illuminate\Support\Collection
+    protected function getAvailabilityPeriodsForDate(string $date): Collection
     {
         $checkDate = \Carbon\Carbon::parse($date);
 
         // Get all availability schedules for this date
-        /** @var \Illuminate\Database\Eloquent\Collection<int, \Zap\Models\Schedule> $availabilitySchedules */
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Schedule> $availabilitySchedules */
         $availabilitySchedules = $this->getScheduleClass()::where('schedulable_type', $this->getMorphClass())
             ->where('schedulable_id', $this->getKey())
             ->availability()
@@ -512,7 +515,7 @@ trait HasSchedules
 
         $allPeriods = collect();
 
-        $availabilitySchedules->each(function (\Zap\Models\Schedule $schedule) use ($date, $checkDate, &$allPeriods) {
+        $availabilitySchedules->each(function (Schedule $schedule) use ($date, $checkDate, &$allPeriods) {
             if (! $schedule->isActiveOn($date)) {
                 return;
             }
@@ -542,7 +545,7 @@ trait HasSchedules
     /**
      * Get all blocking schedules for a specific date in a single query.
      */
-    protected function getBlockingSchedulesForDate(string $date): \Illuminate\Support\Collection
+    protected function getBlockingSchedulesForDate(string $date): Collection
     {
         return $this->getScheduleClass()::where('schedulable_type', $this->getMorphClass())
             ->where('schedulable_id', $this->getKey())
@@ -560,7 +563,7 @@ trait HasSchedules
     /**
      * Check if a slot is available against pre-loaded blocking schedules.
      */
-    protected function isSlotAvailable(string $startTime, string $endTime, string $date, \Illuminate\Support\Collection $blockingSchedules, int $bufferMinutes = 0): bool
+    protected function isSlotAvailable(string $startTime, string $endTime, string $date, Collection $blockingSchedules, int $bufferMinutes = 0): bool
     {
         foreach ($blockingSchedules as $schedule) {
             if ($schedule->schedule_type->is(ScheduleTypes::CUSTOM) || $schedule->preventsOverlaps()) {

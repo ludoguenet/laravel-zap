@@ -3,7 +3,18 @@
 namespace Zap\Enums;
 
 use Carbon\CarbonInterface;
+use Zap\Data\DailyFrequencyConfig;
 use Zap\Data\FrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig\AnnuallyFrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig\BiMonthlyFrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig\MonthlyFrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig\QuarterlyFrequencyConfig;
+use Zap\Data\MonthlyFrequencyConfig\SemiAnnuallyFrequencyConfig;
+use Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyEvenFrequencyConfig;
+use Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyOddFrequencyConfig;
+use Zap\Data\WeeklyFrequencyConfig\BiWeeklyFrequencyConfig;
+use Zap\Data\WeeklyFrequencyConfig\WeeklyFrequencyConfig;
+use Zap\Helper\DateHelper;
 
 enum Frequency: string
 {
@@ -23,8 +34,8 @@ enum Frequency: string
         return match ($this) {
             self::DAILY => $current->copy()->addDay(),
             self::WEEKLY => $current->copy()->addWeek(),
-            self::WEEKLY_ODD => \Zap\Helper\DateHelper::nextWeekOdd($current),
-            self::WEEKLY_EVEN => \Zap\Helper\DateHelper::nextWeekEven($current),
+            self::WEEKLY_ODD => DateHelper::nextWeekOdd($current),
+            self::WEEKLY_EVEN => DateHelper::nextWeekEven($current),
             self::BIWEEKLY => $current->copy()->addWeeks(2),
             self::MONTHLY => $current->copy()->addMonth(),
             self::BIMONTHLY => $current->copy()->addMonths(2),
@@ -40,16 +51,16 @@ enum Frequency: string
     public function configClass(): string
     {
         return match ($this) {
-            self::DAILY => \Zap\Data\DailyFrequencyConfig::class,
-            self::WEEKLY => \Zap\Data\WeeklyFrequencyConfig\WeeklyFrequencyConfig::class,
-            self::WEEKLY_ODD => \Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyOddFrequencyConfig::class,
-            self::WEEKLY_EVEN => \Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyEvenFrequencyConfig::class,
-            self::BIWEEKLY => \Zap\Data\WeeklyFrequencyConfig\BiWeeklyFrequencyConfig::class,
-            self::MONTHLY => \Zap\Data\MonthlyFrequencyConfig\MonthlyFrequencyConfig::class,
-            self::BIMONTHLY => \Zap\Data\MonthlyFrequencyConfig\BiMonthlyFrequencyConfig::class,
-            self::QUARTERLY => \Zap\Data\MonthlyFrequencyConfig\QuarterlyFrequencyConfig::class,
-            self::SEMIANNUALLY => \Zap\Data\MonthlyFrequencyConfig\SemiAnnuallyFrequencyConfig::class,
-            self::ANNUALLY => \Zap\Data\MonthlyFrequencyConfig\AnnuallyFrequencyConfig::class,
+            self::DAILY => DailyFrequencyConfig::class,
+            self::WEEKLY => WeeklyFrequencyConfig::class,
+            self::WEEKLY_ODD => WeeklyOddFrequencyConfig::class,
+            self::WEEKLY_EVEN => WeeklyEvenFrequencyConfig::class,
+            self::BIWEEKLY => BiWeeklyFrequencyConfig::class,
+            self::MONTHLY => MonthlyFrequencyConfig::class,
+            self::BIMONTHLY => BiMonthlyFrequencyConfig::class,
+            self::QUARTERLY => QuarterlyFrequencyConfig::class,
+            self::SEMIANNUALLY => SemiAnnuallyFrequencyConfig::class,
+            self::ANNUALLY => AnnuallyFrequencyConfig::class,
         };
     }
 

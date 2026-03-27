@@ -1,9 +1,12 @@
 <?php
 
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Date;
 use Zap\Enums\ScheduleTypes;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
 use Zap\Models\Schedule;
+use Zap\Models\SchedulePeriod;
 
 describe('Conflict Detection', function () {
 
@@ -28,7 +31,7 @@ describe('Conflict Detection', function () {
 
     it('detects overlapping time periods on same date for not custom schedule', function () {
         $user = createUser();
-        config(['zap.default_rules.no_overlap.applies_to' => [\Zap\Enums\ScheduleTypes::APPOINTMENT]]);
+        config(['zap.default_rules.no_overlap.applies_to' => [ScheduleTypes::APPOINTMENT]]);
 
         // Create first schedule
         Zap::for($user)
@@ -136,7 +139,7 @@ describe('Conflict Detection', function () {
 
         // Add periods that overlap with both existing schedules
         $newSchedule->setRelation('periods', collect([
-            new \Zap\Models\SchedulePeriod([
+            new SchedulePeriod([
                 'date' => '2025-01-01',
                 'start_time' => '09:30', // Overlaps with Meeting 1 (09:00-10:00)
                 'end_time' => '11:00',   // Overlaps with Meeting 2 (10:30-11:30)
@@ -214,7 +217,7 @@ describe('Conflict Detection', function () {
 
     it('handles recurring schedule conflicts when CarbonImmutable is enabled globally', function () {
         //        \Illuminate\Support\Facades\Date::use(\Carbon\CarbonImmutable::class);
-        \Illuminate\Support\Facades\Date::use(\Carbon\CarbonImmutable::class);
+        Date::use(CarbonImmutable::class);
 
         $user = createUser();
 

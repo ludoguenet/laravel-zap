@@ -1,10 +1,12 @@
 <?php
 
+use Zap\Services\ScheduleService;
+
 if (! function_exists('zap')) {
     /**
      * Get the Zap service instance.
      */
-    function zap(): \Zap\Services\ScheduleService
+    function zap(): ScheduleService
     {
         return app('zap');
     }

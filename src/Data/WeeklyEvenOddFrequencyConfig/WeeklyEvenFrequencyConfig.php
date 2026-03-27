@@ -2,6 +2,7 @@
 
 namespace Zap\Data\WeeklyEvenOddFrequencyConfig;
 
+use Carbon\CarbonInterface;
 use Zap\Helper\DateHelper;
 
 /**
@@ -20,7 +21,7 @@ class WeeklyEvenFrequencyConfig extends AbstractWeeklyOddEvenFrequencyConfig
         );
     }
 
-    protected function isWeekTypeMatch(\Carbon\CarbonInterface $date): bool
+    protected function isWeekTypeMatch(CarbonInterface $date): bool
     {
         return DateHelper::isDateInEvenIsoWeek($date);
     }

@@ -3,10 +3,11 @@
 namespace Zap\Tests;
 
 use Illuminate\Database\Eloquent\Model;
+use Zap\Models\Concerns\HasSchedules;
 
 class ZapTestUser extends Model
 {
-    use \Zap\Models\Concerns\HasSchedules;
+    use HasSchedules;
 
     protected $table = 'zap_test_users';
 

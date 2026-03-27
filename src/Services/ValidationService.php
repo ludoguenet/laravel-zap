@@ -2,9 +2,14 @@
 
 namespace Zap\Services;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Zap\Enums\Frequency;
+use Zap\Enums\ScheduleTypes;
 use Zap\Exceptions\InvalidScheduleException;
+use Zap\Exceptions\ScheduleConflictException;
+use Zap\Models\Schedule;
+use Zap\Models\SchedulePeriod;
 
 class ValidationService
 {
@@ -12,8 +17,8 @@ class ValidationService
         private ?string $scheduleClass,
         private ?string $schedulePeriodClass,
     ) {
-        $this->scheduleClass = config('zap.models.schedule', \Zap\Models\Schedule::class);
-        $this->schedulePeriodClass = config('zap.models.schedule_period', \Zap\Models\SchedulePeriod::class);
+        $this->scheduleClass = config('zap.models.schedule', Schedule::class);
+        $this->schedulePeriodClass = config('zap.models.schedule_period', SchedulePeriod::class);
     }
 
     /**
@@ -65,8 +70,8 @@ class ValidationService
 
         // End date must be after start date if provided
         if (! empty($attributes['end_date']) && ! empty($attributes['start_date'])) {
-            $startDate = \Carbon\Carbon::parse($attributes['start_date']);
-            $endDate = \Carbon\Carbon::parse($attributes['end_date']);
+            $startDate = Carbon::parse($attributes['start_date']);
+            $endDate = Carbon::parse($attributes['end_date']);
 
             if ($endDate->lte($startDate)) {
                 $errors['end_date'] = 'The end date must be after the start date';
@@ -75,8 +80,8 @@ class ValidationService
 
         // Check date range limits
         if (! empty($attributes['start_date']) && ! empty($attributes['end_date'])) {
-            $startDate = \Carbon\Carbon::parse($attributes['start_date']);
-            $endDate = \Carbon\Carbon::parse($attributes['end_date']);
+            $startDate = Carbon::parse($attributes['start_date']);
+            $endDate = Carbon::parse($attributes['end_date']);
             $maxRange = config('zap.validation.max_date_range', 365);
 
             if ($endDate->diffInDays($startDate) > $maxRange) {
@@ -87,7 +92,7 @@ class ValidationService
         // Require future dates if configured
         if (config('zap.validation.require_future_dates', true)) {
             if (! empty($attributes['start_date'])) {
-                $startDate = \Carbon\Carbon::parse($attributes['start_date']);
+                $startDate = Carbon::parse($attributes['start_date']);
                 if ($startDate->lt(now()->startOfDay())) {
                     $errors['start_date'] = 'The schedule cannot be created in the past. Please choose a future date';
                 }
@@ -162,8 +167,8 @@ class ValidationService
         // End time must be after start time
         if (! empty($period['start_time']) && ! empty($period['end_time'])) {
             $baseDate = '2024-01-01'; // Use a consistent base date for time parsing
-            $start = \Carbon\Carbon::parse($baseDate.' '.$period['start_time']);
-            $end = \Carbon\Carbon::parse($baseDate.' '.$period['end_time']);
+            $start = Carbon::parse($baseDate.' '.$period['start_time']);
+            $end = Carbon::parse($baseDate.' '.$period['end_time']);
 
             if ($end->lte($start)) {
                 $errors["{$prefix}.end_time"] = "End time ({$period['end_time']}) must be after start time ({$period['start_time']})";
@@ -240,10 +245,10 @@ class ValidationService
         }
 
         $baseDate = '2024-01-01'; // Use a consistent base date for time parsing
-        $start1 = \Carbon\Carbon::parse($baseDate.' '.$period1['start_time']);
-        $end1 = \Carbon\Carbon::parse($baseDate.' '.$period1['end_time']);
-        $start2 = \Carbon\Carbon::parse($baseDate.' '.$period2['start_time']);
-        $end2 = \Carbon\Carbon::parse($baseDate.' '.$period2['end_time']);
+        $start1 = Carbon::parse($baseDate.' '.$period1['start_time']);
+        $end1 = Carbon::parse($baseDate.' '.$period1['end_time']);
+        $start2 = Carbon::parse($baseDate.' '.$period2['start_time']);
+        $end2 = Carbon::parse($baseDate.' '.$period2['end_time']);
 
         return $start1 < $end2 && $end1 > $start2;
     }
@@ -288,7 +293,7 @@ class ValidationService
         }
 
         // Automatically add no_overlap rule for appointment and blocked schedules if enabled
-        $scheduleType = $attributes['schedule_type'] ?? \Zap\Enums\ScheduleTypes::CUSTOM;
+        $scheduleType = $attributes['schedule_type'] ?? ScheduleTypes::CUSTOM;
         $noOverlapConfig = config('zap.default_rules.no_overlap', []);
         $shouldApplyNoOverlap = $this->shouldApplyNoOverlapRule($scheduleType, $noOverlapConfig, $rules);
 
@@ -409,7 +414,7 @@ class ValidationService
     /**
      * Determine if no_overlap rule should be applied.
      */
-    protected function shouldApplyNoOverlapRule(\Zap\Enums\ScheduleTypes $scheduleType, array $noOverlapConfig, array $providedRules): bool
+    protected function shouldApplyNoOverlapRule(ScheduleTypes $scheduleType, array $noOverlapConfig, array $providedRules): bool
     {
         // If no_overlap rule was explicitly provided, don't auto-apply
         if (isset($providedRules['no_overlap']['enabled']) && $providedRules['no_overlap']['enabled'] === false) {
@@ -446,16 +451,16 @@ class ValidationService
 
         $errors = [];
         $baseDate = '2024-01-01'; // Use a consistent base date for time parsing
-        $workStart = \Carbon\Carbon::parse($baseDate.' '.$startTime);
-        $workEnd = \Carbon\Carbon::parse($baseDate.' '.$endTime);
+        $workStart = Carbon::parse($baseDate.' '.$startTime);
+        $workEnd = Carbon::parse($baseDate.' '.$endTime);
 
         foreach ($periods as $index => $period) {
             if (empty($period['start_time']) || empty($period['end_time'])) {
                 continue;
             }
 
-            $periodStart = \Carbon\Carbon::parse($baseDate.' '.$period['start_time']);
-            $periodEnd = \Carbon\Carbon::parse($baseDate.' '.$period['end_time']);
+            $periodStart = Carbon::parse($baseDate.' '.$period['start_time']);
+            $periodEnd = Carbon::parse($baseDate.' '.$period['end_time']);
 
             if ($periodStart->lt($workStart) || $periodEnd->gt($workEnd)) {
                 $errors["periods.{$index}.working_hours"] =
@@ -484,8 +489,8 @@ class ValidationService
             }
 
             $baseDate = '2024-01-01'; // Use a consistent base date for time parsing
-            $start = \Carbon\Carbon::parse($baseDate.' '.$period['start_time']);
-            $end = \Carbon\Carbon::parse($baseDate.' '.$period['end_time']);
+            $start = Carbon::parse($baseDate.' '.$period['start_time']);
+            $end = Carbon::parse($baseDate.' '.$period['end_time']);
             $duration = $start->diffInMinutes($end);
 
             if ($duration > $maxMinutes) {
@@ -514,7 +519,7 @@ class ValidationService
 
         // Check start date
         if (! empty($attributes['start_date'])) {
-            $startDate = \Carbon\Carbon::parse($attributes['start_date']);
+            $startDate = Carbon::parse($attributes['start_date']);
             if (($blockSaturday && $startDate->isSaturday()) || ($blockSunday && $startDate->isSunday())) {
                 $dayName = $startDate->format('l');
                 $errors['start_date'] = "Schedule cannot start on {$dayName}. Weekend schedules are not allowed";
@@ -524,7 +529,7 @@ class ValidationService
         // Check period dates
         foreach ($periods as $index => $period) {
             if (! empty($period['date'])) {
-                $periodDate = \Carbon\Carbon::parse($period['date']);
+                $periodDate = Carbon::parse($period['date']);
                 if (($blockSaturday && $periodDate->isSaturday()) || ($blockSunday && $periodDate->isSunday())) {
                     $dayName = $periodDate->format('l');
                     $errors["periods.{$index}.date"] = "Period cannot be scheduled on {$dayName}. Weekend periods are not allowed";
@@ -555,7 +560,7 @@ class ValidationService
             'is_recurring' => $attributes['is_recurring'] ?? false,
             'frequency' => $attributes['frequency'] ?? null,
             'frequency_config' => $attributes['frequency_config'] ?? null,
-            'schedule_type' => $attributes['schedule_type'] ?? \Zap\Enums\ScheduleTypes::CUSTOM,
+            'schedule_type' => $attributes['schedule_type'] ?? ScheduleTypes::CUSTOM,
         ]);
 
         // Create temporary periods
@@ -572,11 +577,11 @@ class ValidationService
         $tempSchedule->setRelation('periods', $tempPeriods);
 
         // For custom schedules with noOverlap rule, check conflicts with all other schedules
-        if ($tempSchedule->schedule_type->is(\Zap\Enums\ScheduleTypes::CUSTOM)) {
+        if ($tempSchedule->schedule_type->is(ScheduleTypes::CUSTOM)) {
             $conflicts = $this->findCustomScheduleConflicts($tempSchedule);
         } else {
             // Use the conflict detection service for typed schedules
-            $conflictService = app(\Zap\Services\ConflictDetectionService::class);
+            $conflictService = app(ConflictDetectionService::class);
             $conflicts = $conflictService->findConflicts($tempSchedule);
         }
 
@@ -585,7 +590,7 @@ class ValidationService
             $message = $this->buildConflictErrorMessage($tempSchedule, $conflicts);
 
             // Throw the appropriate exception type for conflicts
-            throw (new \Zap\Exceptions\ScheduleConflictException($message))
+            throw (new ScheduleConflictException($message))
                 ->setConflictingSchedules($conflicts);
         }
 
@@ -595,7 +600,7 @@ class ValidationService
     /**
      * Find conflicts for custom schedules with noOverlap rule.
      */
-    protected function findCustomScheduleConflicts(\Zap\Models\Schedule $schedule): array
+    protected function findCustomScheduleConflicts(Schedule $schedule): array
     {
         $conflicts = [];
         $bufferMinutes = config('zap.conflict_detection.buffer_minutes', 0);
@@ -608,12 +613,12 @@ class ValidationService
             ->with('periods')
             ->get();
 
-        $conflictService = app(\Zap\Services\ConflictDetectionService::class);
+        $conflictService = app(ConflictDetectionService::class);
 
         foreach ($otherSchedules as $otherSchedule) {
             // Availability schedules never conflict with anything (they allow overlaps)
-            if ($schedule->schedule_type->is(\Zap\Enums\ScheduleTypes::AVAILABILITY) ||
-                $otherSchedule->schedule_type->is(\Zap\Enums\ScheduleTypes::AVAILABILITY)) {
+            if ($schedule->schedule_type->is(ScheduleTypes::AVAILABILITY) ||
+                $otherSchedule->schedule_type->is(ScheduleTypes::AVAILABILITY)) {
                 continue;
             }
 
@@ -647,7 +652,7 @@ class ValidationService
     /**
      * Build a detailed conflict error message.
      */
-    protected function buildConflictErrorMessage(\Zap\Models\Schedule $newSchedule, array $conflicts): string
+    protected function buildConflictErrorMessage(Schedule $newSchedule, array $conflicts): string
     {
         $conflictCount = count($conflicts);
         $newScheduleName = $newSchedule->name ?? 'New schedule';

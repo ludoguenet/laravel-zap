@@ -4,6 +4,7 @@ use Zap\Enums\ScheduleTypes;
 use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
 use Zap\Models\Schedule;
+use Zap\Models\SchedulePeriod;
 
 describe('Weekly Odd/Even - Conflict Detection ', function () {
 
@@ -26,8 +27,8 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->addPeriod('09:00', '10:30')
             ->save();
 
-        expect($schedule1)->toBeInstanceOf(\Zap\Models\Schedule::class)
-            ->and($schedule2)->toBeInstanceOf(\Zap\Models\Schedule::class);
+        expect($schedule1)->toBeInstanceOf(Schedule::class)
+            ->and($schedule2)->toBeInstanceOf(Schedule::class);
 
     });
 
@@ -50,8 +51,8 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
             ->addPeriod('09:00', '10:30')
             ->save();
 
-        expect($schedule1)->toBeInstanceOf(\Zap\Models\Schedule::class)
-            ->and($schedule2)->toBeInstanceOf(\Zap\Models\Schedule::class);
+        expect($schedule1)->toBeInstanceOf(Schedule::class)
+            ->and($schedule2)->toBeInstanceOf(Schedule::class);
 
     });
 
@@ -133,7 +134,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
 
         // Add periods that overlaps only Meeting 2.
         $newSchedule->setRelation('periods', collect([
-            new \Zap\Models\SchedulePeriod([
+            new SchedulePeriod([
                 'date' => '2025-01-01',
                 'start_time' => '09:30', // Not Overlaps (09:00-10:00) because is in Even Weekly
                 'end_time' => '11:00',   // Overlaps with Meeting 2 (10:30-11:30)
@@ -177,7 +178,7 @@ describe('Weekly Odd/Even - Conflict Detection ', function () {
 
         // Add periods that overlaps only Meeting 2.
         $newSchedule->setRelation('periods', collect([
-            new \Zap\Models\SchedulePeriod([
+            new SchedulePeriod([
                 'date' => '2025-01-06',
                 'start_time' => '09:30', // Not Overlaps (09:00-10:00) because is in Odd Weekly
                 'end_time' => '11:00',   // Overlaps with Meeting 2 (10:30-11:30)

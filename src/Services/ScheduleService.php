@@ -2,6 +2,9 @@
 
 namespace Zap\Services;
 
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -10,6 +13,7 @@ use Zap\Data\FrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Events\ScheduleCreated;
 use Zap\Exceptions\ScheduleConflictException;
+use Zap\Models\Schedule;
 
 class ScheduleService
 {
@@ -18,7 +22,7 @@ class ScheduleService
         private ConflictDetectionService $conflictService,
         private ?string $scheduleClass
     ) {
-        $this->scheduleClass = config('zap.models.schedule', \Zap\Models\Schedule::class);
+        $this->scheduleClass = config('zap.models.schedule', Schedule::class);
     }
 
     /**
@@ -29,7 +33,7 @@ class ScheduleService
         array $attributes,
         array $periods = [],
         array $rules = []
-    ): \Zap\Models\Schedule {
+    ): Schedule {
         return DB::transaction(function () use ($schedulable, $attributes, $periods, $rules) {
             // Set default values
             $attributes = array_merge([
@@ -64,7 +68,7 @@ class ScheduleService
     /**
      * Update an existing schedule.
      */
-    public function update(\Zap\Models\Schedule $schedule, array $attributes, array $periods = []): \Zap\Models\Schedule
+    public function update(Schedule $schedule, array $attributes, array $periods = []): Schedule
     {
         return DB::transaction(function () use ($schedule, $attributes, $periods) {
             // Update the schedule attributes
@@ -96,7 +100,7 @@ class ScheduleService
     /**
      * Delete a schedule.
      */
-    public function delete(\Zap\Models\Schedule $schedule): bool
+    public function delete(Schedule $schedule): bool
     {
         return DB::transaction(function () use ($schedule) {
             // Delete all periods first
@@ -126,7 +130,7 @@ class ScheduleService
     /**
      * Find all schedules that conflict with the given schedule.
      */
-    public function findConflicts(\Zap\Models\Schedule $schedule): array
+    public function findConflicts(Schedule $schedule): array
     {
         return $this->conflictService->findConflicts($schedule);
     }
@@ -134,7 +138,7 @@ class ScheduleService
     /**
      * Check if a schedule has conflicts.
      */
-    public function hasConflicts(\Zap\Models\Schedule $schedule): bool
+    public function hasConflicts(Schedule $schedule): bool
     {
         return $this->conflictService->hasConflicts($schedule);
     }
@@ -179,8 +183,8 @@ class ScheduleService
             E_USER_DEPRECATED
         );
         if (method_exists($schedulable, 'isBookableAt')) {
-            $durationMinutes = \Carbon\Carbon::parse($date.' '.$endTime)
-                ->diffInMinutes(\Carbon\Carbon::parse($date.' '.$startTime));
+            $durationMinutes = Carbon::parse($date.' '.$endTime)
+                ->diffInMinutes(Carbon::parse($date.' '.$startTime));
 
             return $schedulable->isBookableAt($date, $durationMinutes);
         }
@@ -199,12 +203,12 @@ class ScheduleService
         Model $schedulable,
         string $startDate,
         string $endDate
-    ): \Illuminate\Database\Eloquent\Collection {
+    ): Collection {
         if (method_exists($schedulable, 'schedulesForDateRange')) {
             return $schedulable->schedulesForDateRange($startDate, $endDate)->get();
         }
 
-        return new \Illuminate\Database\Eloquent\Collection;
+        return new Collection;
     }
 
     /**
@@ -212,7 +216,7 @@ class ScheduleService
      * Generate recurring schedule instances for a given period.
      */
     public function generateRecurringInstances(
-        \Zap\Models\Schedule $schedule,
+        Schedule $schedule,
         string $startDate,
         string $endDate
     ): array {
@@ -221,8 +225,8 @@ class ScheduleService
         }
 
         $instances = [];
-        $current = \Carbon\Carbon::parse($startDate);
-        $end = \Carbon\Carbon::parse($endDate);
+        $current = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
 
         while ($current->lte($end)) {
             if ($this->shouldCreateInstance($schedule, $current)) {
@@ -242,7 +246,7 @@ class ScheduleService
      * unused
      * Check if a recurring instance should be created for the given date.
      */
-    private function shouldCreateInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    private function shouldCreateInstance(Schedule $schedule, CarbonInterface $date): bool
     {
         $frequency = $schedule->frequency;
         $config = $schedule->frequency_config ?? [];
@@ -258,7 +262,7 @@ class ScheduleService
      * unused
      * Get the next recurrence date.
      */
-    private function getNextRecurrence(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $current): \Carbon\CarbonInterface
+    private function getNextRecurrence(Schedule $schedule, CarbonInterface $current): CarbonInterface
     {
         $frequency = $schedule->frequency;
 

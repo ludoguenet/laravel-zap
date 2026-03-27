@@ -58,7 +58,7 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
         return $this;
     }
 
-    public function shouldCreateInstance(\Carbon\CarbonInterface $date): bool
+    public function shouldCreateInstance(CarbonInterface $date): bool
     {
         $dayMatches = empty($this->days) || in_array(strtolower($date->format('l')), $this->days);
 
@@ -69,7 +69,7 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
         return $dayMatches && $this->startsOn->diffInWeeks($date) % static::getFrequency() === 0;
     }
 
-    public function shouldCreateRecurringInstance(Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    public function shouldCreateRecurringInstance(Schedule $schedule, CarbonInterface $date): bool
     {
         if ($this->startsOn === null) {
             $this->setStartFromStartDate($schedule->start_date);
@@ -93,12 +93,12 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
             $this->startsOn->diffInWeeks($date) % static::getFrequency() === 0;
     }
 
-    public function getNextRecurrence(\Carbon\CarbonInterface $current): \Carbon\CarbonInterface
+    public function getNextRecurrence(CarbonInterface $current): CarbonInterface
     {
         return $this->getNextBiWeeklyOccurrence($current, $this->days);
     }
 
-    protected function getNextBiWeeklyOccurrence(\Carbon\CarbonInterface $current, array $allowedDays): \Carbon\CarbonInterface
+    protected function getNextBiWeeklyOccurrence(CarbonInterface $current, array $allowedDays): CarbonInterface
     {
         $next = $current->copy()->addDay();
         $weekStart = config()->integer('zap.calendar.week_start', CarbonInterface::MONDAY);

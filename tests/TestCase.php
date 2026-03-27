@@ -2,10 +2,13 @@
 
 namespace Zap\Tests;
 
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithCachedConfig;
 use Illuminate\Foundation\Testing\WithCachedRoutes;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Zap\Models\Schedule;
+use Zap\Models\SchedulePeriod;
 use Zap\ZapServiceProvider;
 
 abstract class TestCase extends Orchestra
@@ -18,10 +21,10 @@ abstract class TestCase extends Orchestra
     {
         parent::setUp();
 
-        \Illuminate\Database\Eloquent\Relations\Relation::enforceMorphMap(
+        Relation::enforceMorphMap(
             map: [
-                'rooms' => \Zap\Tests\ZapTestRoom::class,
-                'users' => \Zap\Tests\ZapTestUser::class,
+                'rooms' => ZapTestRoom::class,
+                'users' => ZapTestUser::class,
             ],
 
             merge: true
@@ -75,8 +78,8 @@ abstract class TestCase extends Orchestra
                 'enabled' => false,
             ],
             'models' => [
-                'schedule' => \Zap\Models\Schedule::class,
-                'schedule_period' => \Zap\Models\SchedulePeriod::class,
+                'schedule' => Schedule::class,
+                'schedule_period' => SchedulePeriod::class,
             ],
         ]);
 

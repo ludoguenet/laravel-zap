@@ -10,6 +10,7 @@ use Zap\Data\MonthlyFrequencyConfig\QuarterlyFrequencyConfig;
 use Zap\Data\MonthlyFrequencyConfig\SemiAnnuallyFrequencyConfig;
 use Zap\Data\WeeklyFrequencyConfig\BiWeeklyFrequencyConfig;
 use Zap\Data\WeeklyFrequencyConfig\WeeklyFrequencyConfig;
+use Zap\Models\Schedule;
 
 describe('FrequencyConfig getNextRecurrence', function () {
 
@@ -158,17 +159,17 @@ describe('MonthlyOrdinalWeekdayFrequencyConfig', function () {
 
     it('throws when ordinal is missing', function () {
         expect(fn () => MonthlyOrdinalWeekdayFrequencyConfig::fromArray(['day_of_week' => 1]))
-            ->toThrow(\InvalidArgumentException::class, 'ordinal');
+            ->toThrow(InvalidArgumentException::class, 'ordinal');
     });
 
     it('throws when day_of_week and day are missing', function () {
         expect(fn () => MonthlyOrdinalWeekdayFrequencyConfig::fromArray(['ordinal' => 1]))
-            ->toThrow(\InvalidArgumentException::class);
+            ->toThrow(InvalidArgumentException::class);
     });
 
     it('shouldCreateRecurringInstance returns false when date is before schedule start', function () {
         $config = MonthlyOrdinalWeekdayFrequencyConfig::fromArray(['ordinal' => 1, 'day_of_week' => 3]);
-        $schedule = new \Zap\Models\Schedule;
+        $schedule = new Schedule;
         $schedule->start_date = Carbon::parse('2025-02-01');
 
         expect($config->shouldCreateRecurringInstance($schedule, Carbon::parse('2025-01-01')))->toBeFalse();

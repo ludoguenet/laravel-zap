@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Carbon;
+use Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyEvenFrequencyConfig;
+use Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyOddFrequencyConfig;
 use Zap\Enums\Frequency;
 use Zap\Facades\Zap;
 use Zap\Helper\DateHelper;
@@ -32,7 +34,7 @@ describe('Weekly Odd/Even ', function () {
         expect($availability->frequency->value)->toBe('weekly_even');
 
         expect($availability->frequency_config)
-            ->toBeInstanceOf(\Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyEvenFrequencyConfig::class);
+            ->toBeInstanceOf(WeeklyEvenFrequencyConfig::class);
         expect($availability->frequency_config->days)
             ->toBe([
                 'monday',
@@ -68,7 +70,7 @@ describe('Weekly Odd/Even ', function () {
         expect($availability->frequency->value)->toBe(Frequency::WEEKLY_ODD->value);
 
         expect($availability->frequency_config)
-            ->toBeInstanceOf(\Zap\Data\WeeklyEvenOddFrequencyConfig\WeeklyOddFrequencyConfig::class);
+            ->toBeInstanceOf(WeeklyOddFrequencyConfig::class);
         expect($availability->frequency_config->days)->toBe(['monday', 'wednesday']);
     });
 

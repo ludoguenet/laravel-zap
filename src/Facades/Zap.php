@@ -4,6 +4,7 @@ namespace Zap\Facades;
 
 use Illuminate\Support\Facades\Facade;
 use Zap\Builders\ScheduleBuilder;
+use Zap\Services\ScheduleService;
 
 /**
  * @method static ScheduleBuilder for(mixed $schedulable)
@@ -11,7 +12,7 @@ use Zap\Builders\ScheduleBuilder;
  * @method static array findConflicts(\Zap\Models\Schedule $schedule)
  * @method static bool hasConflicts(\Zap\Models\Schedule $schedule)
  *
- * @see \Zap\Services\ScheduleService
+ * @see ScheduleService
  */
 class Zap extends Facade
 {

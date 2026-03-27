@@ -1,8 +1,11 @@
 <?php
 
-class Users extends \Illuminate\Database\Eloquent\Model
+use Illuminate\Database\Eloquent\Model;
+use Zap\Models\Concerns\HasSchedules;
+
+class Users extends Model
 {
-    use \Zap\Models\Concerns\HasSchedules;
+    use HasSchedules;
 
     protected $table = 'users';
 

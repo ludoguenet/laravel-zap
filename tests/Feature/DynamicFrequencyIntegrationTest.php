@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use Zap\Data\MonthlyFrequencyConfig\EveryXMonthsFrequencyConfig;
 use Zap\Data\MonthlyFrequencyConfig\MonthlyOrdinalWeekdayFrequencyConfig;
 use Zap\Data\WeeklyFrequencyConfig\EveryXWeeksFrequencyConfig;
@@ -176,7 +177,7 @@ describe('Dynamic Frequency Integration', function () {
                 ->save();
 
             $config = $schedule->frequency_config;
-            $current = \Carbon\Carbon::parse('2025-01-06');
+            $current = Carbon::parse('2025-01-06');
             $next = $config->getNextRecurrence($current);
 
             // Should be 3 weeks later (next Monday that's 3 weeks from start)
@@ -195,7 +196,7 @@ describe('Dynamic Frequency Integration', function () {
                 ->save();
 
             $config = $schedule->frequency_config;
-            $current = \Carbon\Carbon::parse('2025-01-15');
+            $current = Carbon::parse('2025-01-15');
             $next = $config->getNextRecurrence($current);
 
             // Should be 4 months later on the 15th
@@ -216,16 +217,16 @@ describe('Dynamic Frequency Integration', function () {
             $config = $schedule->frequency_config;
 
             // Week 0 (start) - should be true
-            expect($config->shouldCreateRecurringInstance($schedule, \Carbon\Carbon::parse('2025-01-06')))->toBeTrue();
+            expect($config->shouldCreateRecurringInstance($schedule, Carbon::parse('2025-01-06')))->toBeTrue();
 
             // Week 1 - should be false
-            expect($config->shouldCreateRecurringInstance($schedule, \Carbon\Carbon::parse('2025-01-13')))->toBeFalse();
+            expect($config->shouldCreateRecurringInstance($schedule, Carbon::parse('2025-01-13')))->toBeFalse();
 
             // Week 2 - should be false
-            expect($config->shouldCreateRecurringInstance($schedule, \Carbon\Carbon::parse('2025-01-20')))->toBeFalse();
+            expect($config->shouldCreateRecurringInstance($schedule, Carbon::parse('2025-01-20')))->toBeFalse();
 
             // Week 3 - should be true
-            expect($config->shouldCreateRecurringInstance($schedule, \Carbon\Carbon::parse('2025-01-27')))->toBeTrue();
+            expect($config->shouldCreateRecurringInstance($schedule, Carbon::parse('2025-01-27')))->toBeTrue();
         });
 
         it('EveryXMonthsFrequencyConfig shouldCreateRecurringInstance works correctly', function () {
@@ -241,13 +242,13 @@ describe('Dynamic Frequency Integration', function () {
             $config = $schedule->frequency_config;
 
             // Month 0 (January) - should be true
-            expect($config->shouldCreateRecurringInstance($schedule, \Carbon\Carbon::parse('2025-01-15')))->toBeTrue();
+            expect($config->shouldCreateRecurringInstance($schedule, Carbon::parse('2025-01-15')))->toBeTrue();
 
             // Month 2 (March) - should be false
-            expect($config->shouldCreateRecurringInstance($schedule, \Carbon\Carbon::parse('2025-03-15')))->toBeFalse();
+            expect($config->shouldCreateRecurringInstance($schedule, Carbon::parse('2025-03-15')))->toBeFalse();
 
             // Month 4 (May) - should be true
-            expect($config->shouldCreateRecurringInstance($schedule, \Carbon\Carbon::parse('2025-05-15')))->toBeTrue();
+            expect($config->shouldCreateRecurringInstance($schedule, Carbon::parse('2025-05-15')))->toBeTrue();
         });
 
     });

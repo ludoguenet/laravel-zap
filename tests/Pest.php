@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Eloquent\Model;
+use Zap\Tests\TestCase;
 use Zap\Tests\ZapTestRoom;
 use Zap\Tests\ZapTestUser;
 
@@ -15,7 +16,7 @@ use Zap\Tests\ZapTestUser;
 |
 */
 
-uses(Zap\Tests\TestCase::class)->in('Feature', 'Unit');
+uses(TestCase::class)->in('Feature', 'Unit');
 
 /*
 |--------------------------------------------------------------------------
@@ -76,7 +77,7 @@ function createScheduleFor(Model $schedulable, array $attributes = [])
         ],
     ], $attributes);
 
-    $builder = \Zap\Facades\Zap::for($schedulable)
+    $builder = Zap\Facades\Zap::for($schedulable)
         ->named($attributes['name'])
         ->from($attributes['start_date']);
 

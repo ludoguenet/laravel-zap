@@ -1,6 +1,9 @@
 <?php
 
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Zap\Enums\Frequency;
+use Zap\Exceptions\ScheduleConflictException;
 use Zap\Facades\Zap;
 use Zap\Models\Schedule;
 
@@ -261,7 +264,7 @@ describe('Documentation Examples Verification', function () {
         // Note: forDate works for recurring schedules, for non-recurring it checks if date is within range
         // Verify the method exists and returns a collection
         $schedules = $doctor->schedulesForDate('2025-01-20')->get();
-        expect($schedules)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+        expect($schedules)->toBeInstanceOf(Collection::class);
         // The forDate scope should find schedules where the date is within the schedule's date range
         // For non-recurring schedules, the exact matching behavior may vary
         // We verify the method works and can be called as documented
@@ -272,7 +275,7 @@ describe('Documentation Examples Verification', function () {
         // It matches if: start_date is in range, end_date is in range, or schedule spans the range
         // Verify the method exists and returns a collection
         $schedulesRange = $doctor->schedulesForDateRange('2025-01-01', '2025-01-31')->get();
-        expect($schedulesRange)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+        expect($schedulesRange)->toBeInstanceOf(Collection::class);
         // Both schedules have start_date within the range [2025-01-01, 2025-01-31]
         // The forDateRange scope should find them, but exact behavior may depend on end_date handling
         // Verify the method works and can be called as documented
@@ -286,7 +289,7 @@ describe('Documentation Examples Verification', function () {
 
         // Verify appointmentSchedules() method works as documented
         // First, verify the appointment exists in the database with correct type
-        $dbAppointment = \Zap\Models\Schedule::where('id', $appointment->id)
+        $dbAppointment = Schedule::where('id', $appointment->id)
             ->where('schedule_type', 'appointment')
             ->first();
         expect($dbAppointment)->not->toBeNull('Appointment should exist in database with correct type');
@@ -295,9 +298,9 @@ describe('Documentation Examples Verification', function () {
         // These methods exist and return MorphMany relationships that can be chained
         // The documentation shows these methods can be used to query schedules by type
         $appointmentsQuery = $doctor->appointmentSchedules();
-        expect($appointmentsQuery)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphMany::class);
+        expect($appointmentsQuery)->toBeInstanceOf(MorphMany::class);
         $appointments = $appointmentsQuery->get();
-        expect($appointments)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+        expect($appointments)->toBeInstanceOf(Collection::class);
         // Verify the method works - it returns a collection and can be called as documented
         // The method exists and works as shown in the documentation
         // Note: The relationship method applies the appointments() scope which filters by schedule_type
@@ -317,9 +320,9 @@ describe('Documentation Examples Verification', function () {
         }
 
         $availabilityQuery = $doctor->availabilitySchedules();
-        expect($availabilityQuery)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphMany::class);
+        expect($availabilityQuery)->toBeInstanceOf(MorphMany::class);
         $availabilityCollection = $availabilityQuery->get();
-        expect($availabilityCollection)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+        expect($availabilityCollection)->toBeInstanceOf(Collection::class);
         // We created one availability schedule, so it should be found
         // Note: The relationship method applies the availability() scope which filters by schedule_type
         // Verify the method works - it may not find the schedule if enum comparison has issues
@@ -473,7 +476,7 @@ describe('Documentation Examples Verification', function () {
 
         // Get schedules of specific type
         $customSchedules = Schedule::ofType('custom')->get();
-        expect($customSchedules)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+        expect($customSchedules)->toBeInstanceOf(Collection::class);
     });
 
     it('verifies Custom schedule with noOverlap from README', function () {
@@ -507,7 +510,7 @@ describe('Documentation Examples Verification', function () {
 
         // Get schedules of specific type using schedulesOfType
         $userCustom = $user->schedulesOfType('custom')->get();
-        expect($userCustom)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+        expect($userCustom)->toBeInstanceOf(Collection::class);
 
         // Verify the method works - it may not find the schedule if enum comparison has issues
         // but the method exists and can be called as documented
@@ -552,7 +555,7 @@ describe('Documentation Examples Verification', function () {
                 ->from('2025-01-15')
                 ->addPeriod('10:30', '11:30') // Overlaps with appointment1
                 ->save();
-        })->toThrow(\Zap\Exceptions\ScheduleConflictException::class);
+        })->toThrow(ScheduleConflictException::class);
     });
 
     it('verifies Buffer Time: Healthcare System example from buffer-time.md', function () {
@@ -792,7 +795,7 @@ describe('Documentation Examples Verification', function () {
                 ->from('2025-01-01')
                 ->addPeriod('10:30', '11:30') // Overlaps with appointment1
                 ->save();
-        })->toThrow(\Zap\Exceptions\ScheduleConflictException::class);
+        })->toThrow(ScheduleConflictException::class);
     });
 
     it('verifies findConflicts example from README', function () {

@@ -2,10 +2,14 @@
 
 namespace Zap\Services;
 
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Zap\Data\FrequencyConfig;
 use Zap\Enums\ScheduleTypes;
+use Zap\Models\Schedule;
+use Zap\Models\SchedulePeriod;
 
 class ConflictDetectionService
 {
@@ -13,14 +17,14 @@ class ConflictDetectionService
         private ?string $scheduleClass,
         private ?string $schedulePeriodClass,
     ) {
-        $this->scheduleClass = config('zap.models.schedule', \Zap\Models\Schedule::class);
-        $this->schedulePeriodClass = config('zap.models.schedule_period', \Zap\Models\SchedulePeriod::class);
+        $this->scheduleClass = config('zap.models.schedule', Schedule::class);
+        $this->schedulePeriodClass = config('zap.models.schedule_period', SchedulePeriod::class);
     }
 
     /**
      * Check if a schedule has conflicts with existing schedules.
      */
-    public function hasConflicts(\Zap\Models\Schedule $schedule): bool
+    public function hasConflicts(Schedule $schedule): bool
     {
         return ! empty($this->findConflicts($schedule));
     }
@@ -28,7 +32,7 @@ class ConflictDetectionService
     /**
      * Find all schedules that conflict with the given schedule.
      */
-    public function findConflicts(\Zap\Models\Schedule $schedule): array
+    public function findConflicts(Schedule $schedule): array
     {
         if (! config('zap.conflict_detection.enabled', true)) {
             return [];
@@ -55,7 +59,7 @@ class ConflictDetectionService
     /**
      * Determine if two schedules should be checked for conflicts.
      */
-    protected function shouldCheckConflict(\Zap\Models\Schedule $schedule1, \Zap\Models\Schedule $schedule2): bool
+    protected function shouldCheckConflict(Schedule $schedule1, Schedule $schedule2): bool
     {
         // Availability schedules never conflict with anything (they allow overlaps)
         if ($schedule1->schedule_type->is(ScheduleTypes::AVAILABILITY) ||
@@ -85,7 +89,7 @@ class ConflictDetectionService
     /**
      * Check if a schedulable has conflicts with a given schedule.
      */
-    public function hasSchedulableConflicts(Model $schedulable, \Zap\Models\Schedule $schedule): bool
+    public function hasSchedulableConflicts(Model $schedulable, Schedule $schedule): bool
     {
         $conflicts = $this->findSchedulableConflicts($schedulable, $schedule);
 
@@ -95,7 +99,7 @@ class ConflictDetectionService
     /**
      * Find conflicts for a schedulable with a given schedule.
      */
-    public function findSchedulableConflicts(Model $schedulable, \Zap\Models\Schedule $schedule): array
+    public function findSchedulableConflicts(Model $schedulable, Schedule $schedule): array
     {
         // Create a temporary schedule for conflict checking
         $tempSchedule = new $this->scheduleClass([
@@ -118,8 +122,8 @@ class ConflictDetectionService
      * Check if two schedules overlap.
      */
     public function schedulesOverlap(
-        \Zap\Models\Schedule $schedule1,
-        \Zap\Models\Schedule $schedule2,
+        Schedule $schedule1,
+        Schedule $schedule2,
         int $bufferMinutes = 0
     ): bool {
         // First check date range overlap
@@ -134,12 +138,12 @@ class ConflictDetectionService
     /**
      * Check if two schedules have overlapping date ranges.
      */
-    protected function dateRangesOverlap(\Zap\Models\Schedule $schedule1, \Zap\Models\Schedule $schedule2): bool
+    protected function dateRangesOverlap(Schedule $schedule1, Schedule $schedule2): bool
     {
         $start1 = $schedule1->start_date;
-        $end1 = $schedule1->end_date ?? \Carbon\Carbon::parse('2099-12-31');
+        $end1 = $schedule1->end_date ?? Carbon::parse('2099-12-31');
         $start2 = $schedule2->start_date;
-        $end2 = $schedule2->end_date ?? \Carbon\Carbon::parse('2099-12-31');
+        $end2 = $schedule2->end_date ?? Carbon::parse('2099-12-31');
 
         return $start1 <= $end2 && $end1 >= $start2;
     }
@@ -148,8 +152,8 @@ class ConflictDetectionService
      * Check if periods from two schedules overlap.
      */
     protected function periodsOverlap(
-        \Zap\Models\Schedule $schedule1,
-        \Zap\Models\Schedule $schedule2,
+        Schedule $schedule1,
+        Schedule $schedule2,
         int $bufferMinutes = 0
     ): bool {
         $periods1 = $this->getSchedulePeriods($schedule1);
@@ -170,8 +174,8 @@ class ConflictDetectionService
      * Check if two specific periods overlap.
      */
     protected function periodPairOverlaps(
-        \Zap\Models\SchedulePeriod $period1,
-        \Zap\Models\SchedulePeriod $period2,
+        SchedulePeriod $period1,
+        SchedulePeriod $period2,
         int $bufferMinutes = 0
     ): bool {
         // Must be on the same date
@@ -196,7 +200,7 @@ class ConflictDetectionService
     /**
      * Get periods for a schedule, handling recurring schedules.
      */
-    protected function getSchedulePeriods(\Zap\Models\Schedule $schedule): Collection
+    protected function getSchedulePeriods(Schedule $schedule): Collection
     {
         $periods = $schedule->relationLoaded('periods')
             ? $schedule->periods
@@ -213,7 +217,7 @@ class ConflictDetectionService
     /**
      * Generate recurring periods for a recurring schedule within a reasonable range.
      */
-    protected function generateRecurringPeriods(\Zap\Models\Schedule $schedule, Collection $basePeriods): Collection
+    protected function generateRecurringPeriods(Schedule $schedule, Collection $basePeriods): Collection
     {
         if (! $schedule->is_recurring || $basePeriods->isEmpty()) {
             return $basePeriods;
@@ -264,7 +268,7 @@ class ConflictDetectionService
     /**
      * Check if a recurring instance should be created for the given date.
      */
-    public function shouldCreateRecurringInstance(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $date): bool
+    public function shouldCreateRecurringInstance(Schedule $schedule, CarbonInterface $date): bool
     {
         $config = $schedule->frequency_config ?? [];
 
@@ -278,7 +282,7 @@ class ConflictDetectionService
     /**
      * Get the next recurrence date for a recurring schedule.
      */
-    protected function getNextRecurrence(\Zap\Models\Schedule $schedule, \Carbon\CarbonInterface $current): \Carbon\CarbonInterface
+    protected function getNextRecurrence(Schedule $schedule, CarbonInterface $current): CarbonInterface
     {
         $config = $schedule->frequency_config ?? [];
 
@@ -292,7 +296,7 @@ class ConflictDetectionService
     /**
      * Get the next weekly occurrence for the given days.
      */
-    protected function getNextWeeklyOccurrence(\Carbon\CarbonInterface $current, array $allowedDays): \Carbon\CarbonInterface
+    protected function getNextWeeklyOccurrence(CarbonInterface $current, array $allowedDays): CarbonInterface
     {
         $next = $current->copy()->addDay();
 
@@ -326,7 +330,7 @@ class ConflictDetectionService
     /**
      * Get other active schedules for the same schedulable.
      */
-    protected function getOtherSchedules(\Zap\Models\Schedule $schedule): Collection
+    protected function getOtherSchedules(Schedule $schedule): Collection
     {
         return $this->scheduleClass::where('schedulable_type', $schedule->schedulable_type)
             ->where('schedulable_id', $schedule->schedulable_id)
@@ -339,11 +343,11 @@ class ConflictDetectionService
     /**
      * Parse a time string to Carbon instance.
      */
-    protected function parseTime(string $time): \Carbon\Carbon
+    protected function parseTime(string $time): Carbon
     {
         $baseDate = '2024-01-01'; // Use a consistent base date for time parsing
 
-        return \Carbon\Carbon::parse($baseDate.' '.$time);
+        return Carbon::parse($baseDate.' '.$time);
     }
 
     /**

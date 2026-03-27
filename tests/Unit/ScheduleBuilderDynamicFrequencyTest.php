@@ -236,7 +236,7 @@ describe('ScheduleBuilder Dynamic Frequency Methods', function () {
             $builder = new ScheduleBuilder;
 
             expect(fn () => $builder->for($user)->from('2025-01-01')->everyInvalidWeeks())
-                ->toThrow(\BadMethodCallException::class, "Invalid number word 'Invalid'");
+                ->toThrow(BadMethodCallException::class, "Invalid number word 'Invalid'");
         });
 
         it('throws BadMethodCallException for non-existent methods', function () {
@@ -244,7 +244,7 @@ describe('ScheduleBuilder Dynamic Frequency Methods', function () {
             $builder = new ScheduleBuilder;
 
             expect(fn () => $builder->for($user)->from('2025-01-01')->nonExistentMethod())
-                ->toThrow(\BadMethodCallException::class, 'does not exist');
+                ->toThrow(BadMethodCallException::class, 'does not exist');
         });
 
         it('throws BadMethodCallException for week frequency over 52', function () {
@@ -253,7 +253,7 @@ describe('ScheduleBuilder Dynamic Frequency Methods', function () {
 
             // FiftyThree = 53, which is > 52
             expect(fn () => $builder->for($user)->from('2025-01-01')->everyFiftyThreeWeeks())
-                ->toThrow(\BadMethodCallException::class, 'Week frequency must be between 1 and 52');
+                ->toThrow(BadMethodCallException::class, 'Week frequency must be between 1 and 52');
         });
 
         it('throws BadMethodCallException for month frequency over 12', function () {
@@ -262,7 +262,7 @@ describe('ScheduleBuilder Dynamic Frequency Methods', function () {
 
             // Thirteen = 13, which is > 12
             expect(fn () => $builder->for($user)->from('2025-01-01')->everyThirteenMonths())
-                ->toThrow(\BadMethodCallException::class, 'Month frequency must be between 1 and 12');
+                ->toThrow(BadMethodCallException::class, 'Month frequency must be between 1 and 12');
         });
 
     });

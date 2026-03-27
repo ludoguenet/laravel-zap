@@ -32,7 +32,7 @@ use Zap\Models\Builders\ScheduleBuilder;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, SchedulePeriod> $periods
+ * @property-read Collection<int, SchedulePeriod> $periods
  * @property-read Model $schedulable
  * @property-read int $total_duration
  *
@@ -129,7 +129,7 @@ class Schedule extends Model
      * Create a new Eloquent Collection instance.
      *
      * @param  array<int, static>  $models
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
     public function newCollection(array $models = []): Collection
     {
@@ -179,7 +179,7 @@ class Schedule extends Model
             return false;
         }
 
-        $checkDate = \Carbon\Carbon::parse($date);
+        $checkDate = Carbon::parse($date);
         $startDate = $this->start_date;
         $endDate = $this->end_date;
 

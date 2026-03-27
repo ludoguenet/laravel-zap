@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use Zap\Facades\Zap;
 
 it('returns empty array when no availability schedules exist', function () {
@@ -183,8 +184,8 @@ it('respects buffer time configuration', function () {
         $firstSlot = $slots[0];
         $secondSlot = $slots[1];
 
-        $time1 = \Carbon\Carbon::parse('2025-01-01 '.$firstSlot['start_time']);
-        $time2 = \Carbon\Carbon::parse('2025-01-01 '.$secondSlot['start_time']);
+        $time1 = Carbon::parse('2025-01-01 '.$firstSlot['start_time']);
+        $time2 = Carbon::parse('2025-01-01 '.$secondSlot['start_time']);
 
         expect((int) $time1->diffInMinutes($time2))->toBe(75);
     } else {
