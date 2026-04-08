@@ -89,7 +89,7 @@ final class EveryXWeeksFrequencyConfig extends FrequencyConfig
             return $dayMatches;
         }
 
-        return $dayMatches && $this->startsOn->diffInWeeks($date) % $this->frequencyWeeks === 0;
+        return $dayMatches && (int) $this->startsOn->diffInWeeks($date) % $this->frequencyWeeks === 0;
     }
 
     public function shouldCreateRecurringInstance(Schedule $schedule, CarbonInterface $date): bool
@@ -113,7 +113,7 @@ final class EveryXWeeksFrequencyConfig extends FrequencyConfig
         }, $allowedDays);
 
         return in_array($date->dayOfWeek, $allowedDayNumbers) &&
-            $this->startsOn->diffInWeeks($date) % $this->frequencyWeeks === 0;
+            (int) $this->startsOn->diffInWeeks($date) % $this->frequencyWeeks === 0;
     }
 
     public function getNextRecurrence(CarbonInterface $current): CarbonInterface
@@ -143,7 +143,7 @@ final class EveryXWeeksFrequencyConfig extends FrequencyConfig
             };
         }, $allowedDays);
 
-        while (! in_array($next->dayOfWeek, $allowedDayNumbers) || $this->startsOn->diffInWeeks($next) % $this->frequencyWeeks !== 0) {
+        while (! in_array($next->dayOfWeek, $allowedDayNumbers) || (int) $this->startsOn->diffInWeeks($next) % $this->frequencyWeeks !== 0) {
             $next = $next->addDay();
 
             if ($next->diffInDays($current) > $this->frequencyWeeks * 7 * 2) {

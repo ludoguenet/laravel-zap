@@ -66,7 +66,7 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
             return $dayMatches;
         }
 
-        return $dayMatches && $this->startsOn->diffInWeeks($date) % static::getFrequency() === 0;
+        return $dayMatches && (int) $this->startsOn->diffInWeeks($date) % static::getFrequency() === 0;
     }
 
     public function shouldCreateRecurringInstance(Schedule $schedule, CarbonInterface $date): bool
@@ -90,7 +90,7 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
         }, $allowedDays);
 
         return in_array($date->dayOfWeek, $allowedDayNumbers) &&
-            $this->startsOn->diffInWeeks($date) % static::getFrequency() === 0;
+            (int) $this->startsOn->diffInWeeks($date) % static::getFrequency() === 0;
     }
 
     public function getNextRecurrence(CarbonInterface $current): CarbonInterface
@@ -126,7 +126,7 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
         }, $allowedDays);
 
         // Find the next allowed day
-        while (! in_array($next->dayOfWeek, $allowedDayNumbers) || $this->startsOn->diffInWeeks($next) % static::getFrequency() !== 0) {
+        while (! in_array($next->dayOfWeek, $allowedDayNumbers) || (int) $this->startsOn->diffInWeeks($next) % static::getFrequency() !== 0) {
             $next = $next->addDay();
 
             // Prevent infinite loop
