@@ -223,6 +223,33 @@ describe('can check if a date time is bookable using isBookableAtTime', function
         expect($isBookable2)->toBeTrue();
     });
 
+    it('respects buffer minutes when checking time bookability', function () {
+        $user = createUser();
+
+        Zap::for($user)
+            ->availability()
+            ->forYear(2025)
+            ->addPeriod('09:00', '12:00')
+            ->weeklyEven(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
+            ->save();
+
+        // Appointment blocks 09:00–09:30; with a 15-min buffer, next usable start is 09:45
+        Zap::for($user)
+            ->appointment()
+            ->on('2025-01-06')
+            ->addPeriod('09:00', '09:30')
+            ->save();
+
+        // 09:30–10:00 falls inside the 15-min buffer window → not bookable
+        $blockedByBuffer = $user->isBookableAtTime('2025-01-06', '09:30', '10:00', null, 30, 15);
+
+        // 09:45–10:15 clears the buffer → bookable
+        $afterBuffer = $user->isBookableAtTime('2025-01-06', '09:45', '10:15', null, 30, 15);
+
+        expect($blockedByBuffer)->toBeFalse();
+        expect($afterBuffer)->toBeTrue();
+    });
+
 });
 
 it('can find next bookable slot', function () {
