@@ -7,7 +7,7 @@ use Zap\Data\WeeklyFrequencyConfig\BiWeeklyFrequencyConfig;
 use Zap\Data\WeeklyFrequencyConfig\EveryXWeeksFrequencyConfig;
 use Zap\Models\Schedule;
 
-function captureNullParameterDeprecations(callable $callback): array
+function captureNullParameterDeprecationWarnings(callable $callback): array
 {
     $deprecationWarnings = [];
 
@@ -149,7 +149,7 @@ describe('PHP 8.1+ Implicit Float to Int Conversion', function () {
     });
 
     it('should not emit deprecation warnings when casting a null frequency', function () {
-        $deprecationWarnings = captureNullParameterDeprecations(function () {
+        $deprecationWarnings = captureNullParameterDeprecationWarnings(function () {
             $cast = new SafeFrequencyCast;
             $schedule = new Schedule;
 
@@ -160,7 +160,7 @@ describe('PHP 8.1+ Implicit Float to Int Conversion', function () {
     });
 
     it('should not emit deprecation warnings when casting a null frequency config', function () {
-        $deprecationWarnings = captureNullParameterDeprecations(function () {
+        $deprecationWarnings = captureNullParameterDeprecationWarnings(function () {
             $cast = new SafeFrequencyConfigCast;
             $schedule = new Schedule;
 
