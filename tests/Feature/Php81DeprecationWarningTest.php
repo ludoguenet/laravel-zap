@@ -1,8 +1,11 @@
 <?php
 
 use Carbon\Carbon;
+use Zap\Casts\SafeFrequencyCast;
+use Zap\Casts\SafeFrequencyConfigCast;
 use Zap\Data\WeeklyFrequencyConfig\BiWeeklyFrequencyConfig;
 use Zap\Data\WeeklyFrequencyConfig\EveryXWeeksFrequencyConfig;
+use Zap\Models\Schedule;
 
 /**
  * These tests verify that PHP 8.1+ deprecation warnings for implicit float to int
@@ -122,5 +125,51 @@ describe('PHP 8.1+ Implicit Float to Int Conversion', function () {
 
         expect($deprecationWarnings)->toBeEmpty();
         expect($next)->toBeInstanceOf(Carbon::class);
+    });
+
+    it('should not emit deprecation warnings when casting a null frequency', function () {
+        $deprecationWarnings = [];
+
+        set_error_handler(function ($errno, $errstr) use (&$deprecationWarnings) {
+            if ($errno === E_DEPRECATED && str_contains($errstr, 'Passing null to parameter #1')) {
+                $deprecationWarnings[] = $errstr;
+            }
+
+            return false;
+        });
+
+        try {
+            $cast = new SafeFrequencyCast;
+            $schedule = new Schedule;
+
+            expect($cast->get($schedule, 'frequency', null, []))->toBeNull();
+        } finally {
+            restore_error_handler();
+        }
+
+        expect($deprecationWarnings)->toBeEmpty();
+    });
+
+    it('should not emit deprecation warnings when casting a null frequency config', function () {
+        $deprecationWarnings = [];
+
+        set_error_handler(function ($errno, $errstr) use (&$deprecationWarnings) {
+            if ($errno === E_DEPRECATED && str_contains($errstr, 'Passing null to parameter #1')) {
+                $deprecationWarnings[] = $errstr;
+            }
+
+            return false;
+        });
+
+        try {
+            $cast = new SafeFrequencyConfigCast;
+            $schedule = new Schedule;
+
+            expect($cast->get($schedule, 'frequency_config', null, []))->toBeNull();
+        } finally {
+            restore_error_handler();
+        }
+
+        expect($deprecationWarnings)->toBeEmpty();
     });
 });
