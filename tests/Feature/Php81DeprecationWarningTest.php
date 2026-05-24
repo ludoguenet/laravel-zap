@@ -7,6 +7,27 @@ use Zap\Data\WeeklyFrequencyConfig\BiWeeklyFrequencyConfig;
 use Zap\Data\WeeklyFrequencyConfig\EveryXWeeksFrequencyConfig;
 use Zap\Models\Schedule;
 
+function captureNullParameterDeprecations(callable $callback): array
+{
+    $deprecationWarnings = [];
+
+    set_error_handler(function ($errno, $errstr) use (&$deprecationWarnings) {
+        if ($errno === E_DEPRECATED && str_contains($errstr, 'Passing null to parameter #1')) {
+            $deprecationWarnings[] = $errstr;
+        }
+
+        return false;
+    });
+
+    try {
+        $callback();
+    } finally {
+        restore_error_handler();
+    }
+
+    return $deprecationWarnings;
+}
+
 /**
  * These tests verify that PHP 8.1+ deprecation warnings for implicit float to int
  * conversions do not occur when using diffInWeeks() with the modulo operator.
@@ -128,47 +149,23 @@ describe('PHP 8.1+ Implicit Float to Int Conversion', function () {
     });
 
     it('should not emit deprecation warnings when casting a null frequency', function () {
-        $deprecationWarnings = [];
-
-        set_error_handler(function ($errno, $errstr) use (&$deprecationWarnings) {
-            if ($errno === E_DEPRECATED && str_contains($errstr, 'Passing null to parameter #1')) {
-                $deprecationWarnings[] = $errstr;
-            }
-
-            return false;
-        });
-
-        try {
+        $deprecationWarnings = captureNullParameterDeprecations(function () {
             $cast = new SafeFrequencyCast;
             $schedule = new Schedule;
 
             expect($cast->get($schedule, 'frequency', null, []))->toBeNull();
-        } finally {
-            restore_error_handler();
-        }
+        });
 
         expect($deprecationWarnings)->toBeEmpty();
     });
 
     it('should not emit deprecation warnings when casting a null frequency config', function () {
-        $deprecationWarnings = [];
-
-        set_error_handler(function ($errno, $errstr) use (&$deprecationWarnings) {
-            if ($errno === E_DEPRECATED && str_contains($errstr, 'Passing null to parameter #1')) {
-                $deprecationWarnings[] = $errstr;
-            }
-
-            return false;
-        });
-
-        try {
+        $deprecationWarnings = captureNullParameterDeprecations(function () {
             $cast = new SafeFrequencyConfigCast;
             $schedule = new Schedule;
 
             expect($cast->get($schedule, 'frequency_config', null, []))->toBeNull();
-        } finally {
-            restore_error_handler();
-        }
+        });
 
         expect($deprecationWarnings)->toBeEmpty();
     });
