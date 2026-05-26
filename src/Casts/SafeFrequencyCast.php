@@ -9,6 +9,10 @@ class SafeFrequencyCast implements CastsAttributes
 {
     public function get($model, string $key, $value, array $attributes)
     {
+        if ($value === null) {
+            return null;
+        }
+
         $enum = Frequency::tryFrom($value);
 
         if ($enum) {
