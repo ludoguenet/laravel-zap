@@ -60,7 +60,13 @@ class ScheduleBuilder extends Builder
         $checkDate = Carbon::parse($date);
         $weekday = strtolower($checkDate->format('l')); // monday, tuesday, ...
         $dayOfMonth = $checkDate->day;
+        $month = $checkDate->month;
         $isDateInEvenIsoWeek = DateHelper::isDateInEvenIsoWeek($date);
+
+        // Valid start_month values for sub-annual frequencies at this calendar month
+        $validStartMonthsBimonthly = array_values(array_filter(range(1, 12), fn ($m) => ($month - $m + 12) % 2 === 0));
+        $validStartMonthsQuarterly = array_values(array_filter(range(1, 12), fn ($m) => ($month - $m + 12) % 3 === 0));
+        $validStartMonthsSemiannually = array_values(array_filter(range(1, 12), fn ($m) => ($month - $m + 12) % 6 === 0));
 
         return $this
             // date range
@@ -71,7 +77,7 @@ class ScheduleBuilder extends Builder
             })
 
             // recurrence logic
-            ->where(function ($q) use ($checkDate, $weekday, $dayOfMonth, $isDateInEvenIsoWeek) {
+            ->where(function ($q) use ($checkDate, $weekday, $dayOfMonth, $month, $isDateInEvenIsoWeek, $validStartMonthsBimonthly, $validStartMonthsQuarterly, $validStartMonthsSemiannually) {
 
                 //
                 // 1️⃣ NOT RECURRING — match exact start_date if no end_date, or any date in range if end_date is set
@@ -109,7 +115,7 @@ class ScheduleBuilder extends Builder
                             ->whereJsonContains('frequency_config->days', $weekday);
                     })
                     //
-                    // 4 WEEKLY_EVEN | WEEKLY_ODD — match weekday inside config
+                    // 4️⃣ WEEKLY_EVEN | WEEKLY_ODD — match weekday inside config
                     //
                     ->orWhere(function ($query) use ($weekday, $isDateInEvenIsoWeek) {
                         $query->where('is_recurring', true)
@@ -118,21 +124,67 @@ class ScheduleBuilder extends Builder
                     })
 
                     //
-                    // 5️⃣ MONTHLY — match day_of_month from config
+                    // 5️⃣ MONTHLY — any month is valid; match day_of_month from config
                     //
                     ->orWhere(function ($monthly) use ($dayOfMonth) {
                         $monthly->where('is_recurring', true)
-                            ->whereIn(
-                                'frequency',
-                                array_map(
-                                    fn (Frequency $frequency) => $frequency->value,
-                                    Frequency::filteredByDaysOfMonth()
-                                )
-                            )
+                            ->where('frequency', Frequency::MONTHLY->value)
                             ->where(function ($m) use ($dayOfMonth) {
                                 $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
                                     ->orWhere('frequency_config->days_of_month', $dayOfMonth);
                             });
+                    })
+
+                    //
+                    // 5b️⃣ BIMONTHLY — match day_of_month and only months where (M - start_month + 12) % 2 = 0
+                    //
+                    ->orWhere(function ($bimonthly) use ($dayOfMonth, $validStartMonthsBimonthly) {
+                        $bimonthly->where('is_recurring', true)
+                            ->where('frequency', Frequency::BIMONTHLY->value)
+                            ->where(function ($m) use ($dayOfMonth) {
+                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
+                                    ->orWhere('frequency_config->days_of_month', $dayOfMonth);
+                            })
+                            ->whereIn('frequency_config->start_month', $validStartMonthsBimonthly);
+                    })
+
+                    //
+                    // 5c️⃣ QUARTERLY — match day_of_month and only months where (M - start_month + 12) % 3 = 0
+                    //
+                    ->orWhere(function ($quarterly) use ($dayOfMonth, $validStartMonthsQuarterly) {
+                        $quarterly->where('is_recurring', true)
+                            ->where('frequency', Frequency::QUARTERLY->value)
+                            ->where(function ($m) use ($dayOfMonth) {
+                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
+                                    ->orWhere('frequency_config->days_of_month', $dayOfMonth);
+                            })
+                            ->whereIn('frequency_config->start_month', $validStartMonthsQuarterly);
+                    })
+
+                    //
+                    // 5d️⃣ SEMIANNUALLY — match day_of_month and only months where (M - start_month + 12) % 6 = 0
+                    //
+                    ->orWhere(function ($semi) use ($dayOfMonth, $validStartMonthsSemiannually) {
+                        $semi->where('is_recurring', true)
+                            ->where('frequency', Frequency::SEMIANNUALLY->value)
+                            ->where(function ($m) use ($dayOfMonth) {
+                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
+                                    ->orWhere('frequency_config->days_of_month', $dayOfMonth);
+                            })
+                            ->whereIn('frequency_config->start_month', $validStartMonthsSemiannually);
+                    })
+
+                    //
+                    // 5e️⃣ ANNUALLY — match day_of_month and exact start_month
+                    //
+                    ->orWhere(function ($annually) use ($dayOfMonth, $month) {
+                        $annually->where('is_recurring', true)
+                            ->where('frequency', Frequency::ANNUALLY->value)
+                            ->where(function ($m) use ($dayOfMonth) {
+                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
+                                    ->orWhere('frequency_config->days_of_month', $dayOfMonth);
+                            })
+                            ->where('frequency_config->start_month', $month);
                     })
 
                     //
