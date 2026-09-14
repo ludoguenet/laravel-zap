@@ -5,7 +5,7 @@
 **Flexible schedule management for modern Laravel applications**
 
 [![PHP Version](https://img.shields.io/badge/PHP-%E2%89%A48.5-777BB4?style=for-the-badge&logo=php)](https://www.php.net/)
-[![Laravel Version](https://img.shields.io/badge/Laravel-%E2%89%A413.0-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
+[![Laravel Version](https://img.shields.io/badge/Laravel-%E2%89%A412.0-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
 [![License](http://poser.pugx.org/laraveljutsu/zap/license?style=for-the-badge)](https://packagist.org/packages/laraveljutsu/zap)
 [![Total Downloads](http://poser.pugx.org/laraveljutsu/zap/downloads?style=for-the-badge)](https://packagist.org/packages/laraveljutsu/zap)
 [![Why PHP](https://img.shields.io/badge/Why_PHP-in_2026-7A86E8?style=for-the-badge&labelColor=18181b)](https://whyphp.dev)
@@ -42,7 +42,7 @@ Zap is a calendar and scheduling package for Laravel. Define **availabilities**,
 
 ## 📦 Installation
 
-**Requirements:** PHP ≥8.5 • Laravel ≥13.0
+**Requirements:** PHP ≥8.5 • Laravel ≥12.0
 
 ```bash
 composer require laraveljutsu/zap
