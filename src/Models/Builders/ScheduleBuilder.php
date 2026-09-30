@@ -136,10 +136,7 @@ class ScheduleBuilder extends Builder
                     ->orWhere(function ($monthly) use ($dayOfMonth) {
                         $monthly->where('is_recurring', true)
                             ->where('frequency', Frequency::MONTHLY->value)
-                            ->where(function ($m) use ($dayOfMonth) {
-                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
-                                    ->orWhereJsonContains('frequency_config->days_of_month', $dayOfMonth);
-                            });
+                            ->whereJsonContains('frequency_config->days_of_month', $dayOfMonth);
                     })
 
                     //
@@ -148,10 +145,7 @@ class ScheduleBuilder extends Builder
                     ->orWhere(function ($bimonthly) use ($dayOfMonth, $validStartMonthsBimonthly) {
                         $bimonthly->where('is_recurring', true)
                             ->where('frequency', Frequency::BIMONTHLY->value)
-                            ->where(function ($m) use ($dayOfMonth) {
-                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
-                                    ->orWhereJsonContains('frequency_config->days_of_month', $dayOfMonth);
-                            })
+                            ->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
                             ->where(function ($q) use ($validStartMonthsBimonthly) {
                                 foreach ($validStartMonthsBimonthly as $month) {
                                     $q->orWhereJsonContains('frequency_config->start_month', $month);
@@ -165,10 +159,7 @@ class ScheduleBuilder extends Builder
                     ->orWhere(function ($quarterly) use ($dayOfMonth, $validStartMonthsQuarterly) {
                         $quarterly->where('is_recurring', true)
                             ->where('frequency', Frequency::QUARTERLY->value)
-                            ->where(function ($m) use ($dayOfMonth) {
-                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
-                                    ->orWhereJsonContains('frequency_config->days_of_month', $dayOfMonth);
-                            })
+                            ->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
                             ->where(function ($q) use ($validStartMonthsQuarterly) {
                                 foreach ($validStartMonthsQuarterly as $month) {
                                     $q->orWhereJsonContains('frequency_config->start_month', $month);
@@ -182,10 +173,7 @@ class ScheduleBuilder extends Builder
                     ->orWhere(function ($semi) use ($dayOfMonth, $validStartMonthsSemiannually) {
                         $semi->where('is_recurring', true)
                             ->where('frequency', Frequency::SEMIANNUALLY->value)
-                            ->where(function ($m) use ($dayOfMonth) {
-                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
-                                    ->orWhereJsonContains('frequency_config->days_of_month', $dayOfMonth);
-                            })
+                            ->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
                             ->where(function ($q) use ($validStartMonthsSemiannually) {
                                 foreach ($validStartMonthsSemiannually as $month) {
                                     $q->orWhereJsonContains('frequency_config->start_month', $month);
@@ -199,10 +187,7 @@ class ScheduleBuilder extends Builder
                     ->orWhere(function ($annually) use ($dayOfMonth, $month) {
                         $annually->where('is_recurring', true)
                             ->where('frequency', Frequency::ANNUALLY->value)
-                            ->where(function ($m) use ($dayOfMonth) {
-                                $m->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
-                                    ->orWhereJsonContains('frequency_config->days_of_month', $dayOfMonth);
-                            })
+                            ->whereJsonContains('frequency_config->days_of_month', $dayOfMonth)
                             ->whereJsonContains('frequency_config->start_month', $month);
                     })
 
